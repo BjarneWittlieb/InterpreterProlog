@@ -2,9 +2,8 @@ module Vars where
 
 import Type
 
-add :: Int -> Int -> Int
-add x y = x + y
-
+-- allVars is a function that will return all contained Variables within a certain type
+-- The implementation also should eliminate duplicates
 class Vars a where
     allVars :: a -> [VarName]
 
@@ -21,21 +20,21 @@ instance Vars Prog where
 instance Vars Goal where
     allVars (Goal ts) = killDuplicates (foldr (++) [] (fmap allVars ts))
 
+-- Helper Function for eliminating duplicates within a list
 killDuplicates :: (Eq a) => [a] -> [a]
 killDuplicates []       = []
 killDuplicates (x:xs)   = [x] ++ (filter (/= x) (killDuplicates xs))
 
 -- For testing
-t1 :: Term
 t1 = (Comb "." [Comb "true" [], Comb "h" [Var "E", Comb "i" [Var "F"]]])
-
 r1 = Rule t1 [t1, t1, t1]
 p1 = Prog [r1, r1, r1]
 
-
+-- Possible chars for Variables
 firstChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"
 allChars = firstChars ++ "abcdefghijklmnopqrstuvwxyz"
 
+-- A list of all possible Variables in Prolog
 freshVars :: [VarName]
 freshVars = [x:xs | xs <- [""] ++ allOptions, x <- firstChars] where
     allOptions :: [String]
@@ -43,6 +42,3 @@ freshVars = [x:xs | xs <- [""] ++ allOptions, x <- firstChars] where
         aggregator1 i = (aggregator2 i) ++ (aggregator1 (i+1))
         aggregator2 0 = [[c] | c <- allChars]
         aggregator2 i = [c:s | c <- allChars, s <- aggregator2 (i-1)]
-
-allOptions :: [String]
-allOptions = [[c] | c <- allChars] ++ [c:s | c <- allChars, s <- allOptions]

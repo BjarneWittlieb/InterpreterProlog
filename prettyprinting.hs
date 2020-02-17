@@ -9,7 +9,6 @@ class Pretty a where
 
 -- Hier fehlen Kommentare
 instance Pretty Term where
-  -- pretty :: Term -> String
   pretty (Var v) = v
   pretty (Comb c []) = c
   pretty (Comb "." [Comb c1 xs, Comb "[]" []]) = "[" ++ (pretty (Comb c1 xs)) ++ "]"
