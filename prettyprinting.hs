@@ -1,30 +1,10 @@
+module Pretty where
+
 import Data.List
 
--- Alias type for variables
-type VarName = String
+import Type
 
--- Alias type for combinators
-type CombName = String
-
--- Data type for terms
-data Term = Var VarName | Comb CombName [Term]
-  deriving Show
-
--- Data type for program rules
-data Rule = Rule Term [Term]
-  deriving Show
-
--- Data type for programs
-data Prog = Prog [Rule]
-  deriving Show
-
--- Data type for goals
-data Goal = Goal [Term]
-  deriving Show
-  
-class Pretty a where
-  pretty :: a -> String
-
+-- Hier fehlen Kommentare
 instance Pretty Term where
   -- pretty :: Term -> String
   pretty (Var v) = v
