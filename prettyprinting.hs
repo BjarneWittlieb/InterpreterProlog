@@ -1,8 +1,11 @@
-module Pretty where
+module Prettyprinting where
 
 import Data.List
 
 import Type
+
+class Pretty a where
+  pretty :: a -> String
 
 -- Hier fehlen Kommentare
 instance Pretty Term where
