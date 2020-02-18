@@ -26,7 +26,7 @@ replaceList xs vs = convertType (replaceListAcc xs vs) where
   replaceListAcc :: [Term] -> [VarName] -> [(Term,[VarName])]
   replaceListAcc [] _ = []
   replaceListAcc (x:xs) vs = let y = replaceUnderscore x vs in (y):(replaceListAcc xs (vs ++ (snd y)))
-  -- converts the return type into something more useful
+  -- converts the return type of replaceListAcc into something more useful
   convertType :: (Eq b) => [(a,[b])] -> ([a],[b])
   convertType [] = ([],[])
   convertType (x:xs) = combine x (convertType xs)

@@ -41,6 +41,10 @@ compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
   -- Filters the substitutions from the first substitution out of the second (based on the vars on the left side)
   filteredSet = filter (\(x, y) -> (not (elem x (fmap fst xs)))) ys
 
+restrictTo :: [VarName] -> Subst -> Subst
+restrictTo _ (Subst []) = empty
+restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
+                             | otherwise = restrictTo vs (Subst xs) 
 
 -- Substitutions for Testing
 s1 = Subst [("A",Comb "f" [Var "B", Var "_", Comb "true" []])]
