@@ -6,7 +6,7 @@ import Vars
 import Substitutions
 
 
--- Replaces the "_" variable with other fitting variables, the variables in the specifid list won't be used
+-- Replaces the "_" variable with other fitting variables, the variables in the specified list won't be used
 replaceUnderscore :: Term -> [VarName] -> (Term, [VarName])
 -- The actual replacing
 replaceUnderscore (Var "_") vs = ((Var s), (s:vs))  where
