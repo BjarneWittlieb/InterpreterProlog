@@ -37,4 +37,7 @@ replaceUnderscore t = fst (replaceAcc t (allVars t)) where
             finalVs :: [VarName]
             finalVs = snd otherResult
 
-replace :: (VarName -> VarName) -> Rule -> Rule
+-- What varnames not to pick for the renaming of the variable in given rule
+-- Returns a tuple containing the renamed rule and the superset of the fiven varname containing
+--  containing also the variable names
+rename :: [VarName] -> Rule -> Rule
