@@ -14,7 +14,7 @@ sld :: Prog -> Goal -> SLDTree
 sld prog goal = fst (sldWithVar vars p g) where
     vars = killDuplicates ((allVars prog) ++ (allVars goal)) 
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
-    sldWithVar vars prog Goal ts = SLDTree tsRenamed appliedProgramm where
+    sldWithVar vars prog (Goal ts) = SLDTree tsRenamed appliedProgramm where
         -- Renaming Goal / Terms in Goals
         tsRenameResult = renameTerms ts vars
         tsRenamed = fst tsRenameResult
@@ -30,3 +30,23 @@ sld prog goal = fst (sldWithVar vars p g) where
         ruleToTree goalTerm (Rule t ts) prog = subst >>= (\s -> Maybe (s, tree)) where
             subst = unify goalTerm t
             tree = sld prog (Goal ts)
+
+type Strategy = SLDTree -> [Subst]
+
+dfs :: Strategy
+dfs (Node [] _) = empty
+dfs (Node _ []) = []
+dfs (Node ts (Nothing:ms)) = dfs (Node ts ss)
+dfs (Note ts ((Just (s, sld)):ms) = (fmap (compose s) (dfs sld)) ++ dfs (Node ts ms)
+
+bfs :: Strategy
+bfs sld = bfsAcc [(sld, empty)] where
+  bfsAcc :: [(SLDTree, Subst)] -> [Subst]
+  bfsAcc s = foldr (++) [] (fmap oneStep s)
+  oneStep :: (SLDTree, Subst) -> [(SLDTree, Subst)]
+  oneStep ((Node [] _), s) = [s]
+  oneStep ((Node _ []), s) = []
+  oneStep ((Node ts (Nothing:ms)), s) = oneStep (Node 
+
+solve :: Strategy -> Prog -> Goal -> [Subst]
+solve s p g = s (sld p g) 
