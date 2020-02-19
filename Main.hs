@@ -2,11 +2,14 @@ module Main where
 
 
 import Type
+import SLDResolution
+import Parser
+
 
 -- Welcomes the User and loops
 main :: IO ()
 main = do
-    putStrLn "Welcome to PROVIN MACHINE!\n\n"
+    putStrLn "Welcome to PROVING MACHINE!\n\n"
     putStrLn "        Nd. 'ccccccccccccccccccccccccccc:.,0MMMM"
     putStrLn "        MWO;,dXMMMMM0l::cccccccccccccokNX;'0MMMM"
     putStrLn "        MMMNd,;kWMMM0;.,xOOOOOOOOOOOxl':x;'0MMMM"
@@ -28,30 +31,59 @@ main = do
     putStrLn "        Wk'.cO000000000000000000000000000l.oWMMM"
     putStrLn "        Nc  ............................. .kMMMM\n\n"
     -- Start with empty programm
-    loop (Prog [])
+    loop (Prog []) dfs
 
 -- Now File stands for the currently loaded program
 
 -- Loops through the program
-loop :: Prog -> IO ()
-loop file = do
+loop :: Prog -> Strategy -> IO ()
+loop file strat = do
     putStr "?- "
     str <- getLine
-    process file str
+    process file strat str
 
-process :: Prog -> String -> IO ()
-process file str | head str == ':'   = processCommand file (tail str)
-                 | otherwise         = putStr "Not implemented"
+process :: Prog -> Strategy -> String -> IO ()
+process file strat (':':cmd)  = processCommand file strat cmd
+process file strat cmd        = putStr "Not implemented"
 
-processCommand :: Prog -> String -> IO ()
-processCommand file ('h':_) = do
-    putStrLn "Help window for PROVE-MACHINE:"
+processCommand :: Prog -> Strategy -> String -> IO ()
+
+-- Help window
+processCommand file strat ('h':_) = do
+    putStrLn "Help window for PROVING MACHINE:"
     putStrLn "  <goal>      Proves the specefied goal with currently loaded Programms."
     putStrLn "  :h          Shows this help window."
     putStrLn "  :l <file>   Loads the specified file."
     putStrLn "  :q          Exits the interactive environtment"
     putStrLn "  :s <strat>  Sets the specified strategy"
     putStrLn "              Where <strat> is one of 'dfs', 'bfs' or 'idfs'."
-    loop file
-processCommand file ('q':_) = do
+    loop file strat
+
+-- Qutting programm    
+processCommand file strat ('q':_) = do
     putStrLn "Goodbye!"
+
+-- Setting strategy
+processCommand file strat "s dfs" = do
+    loop file dfs
+processCommand file strat "s bfs" = do
+    loop file bfs
+processCommand file strat "s idfs" = do
+    loop file idfs
+
+-- Loading program
+processCommand file strat ('l':' ':filePath) = do
+    x <- parseFile filePath
+    case x of
+        (Left s) -> do
+            putStrLn s
+            loop file strat
+        (Right prog) -> do
+            putStrLn ("Loaded " ++ filePath ++ " successfully!")
+            loop prog strat 
+
+-- Command could not be recognized
+processCommand file strat _ = do
+    putStrLn "Command not found."
+    putStrLn "Try ':h' to see a list of commands."
+    loop file strat
