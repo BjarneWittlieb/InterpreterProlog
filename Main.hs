@@ -4,6 +4,8 @@ module Main where
 import Type
 import SLDResolution
 import Parser
+import Substitutions
+import Prettyprinting
 
 
 -- Welcomes the User and loops
@@ -44,7 +46,31 @@ loop file strat = do
 
 process :: Prog -> Strategy -> String -> IO ()
 process file strat (':':cmd)  = processCommand file strat cmd
-process file strat cmd        = putStr "Not implemented"
+process file strat cmd        = do
+    let x = parse cmd
+    case x of
+        (Left s) -> do
+            putStrLn s
+            loop file strat
+        (Right goal) -> do
+            goThroughSubs (solve strat file goal)
+            loop file strat
+
+goThroughSubs :: [Subst] -> IO ()
+goThroughSubs []   = do
+    putStrLn "Finnished."
+    return ()
+goThroughSubs (x:xs) = do
+    putStr (pretty x)
+    c <- getChar
+    case c of
+        '.' -> do
+            putStrLn "Finnished."
+            return ()
+        ';' -> goThroughSubs xs
+        _ -> do
+            putStrLn "Expected either '.' or ';'!"
+            return ()
 
 processCommand :: Prog -> Strategy -> String -> IO ()
 
