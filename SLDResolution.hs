@@ -11,15 +11,16 @@ data SLDTree = Node [Term] [Maybe (Subst, SLDTree)]
 
 -- A Goal consisits of multiple terms so we return multiple sld trees?
 sld :: Prog -> Goal -> SLDTree
-sld prog goal = fst (sldWithVar vars p g) where
+sld prog goal = fst (sldWithVar vars prog goal) where
     vars = killDuplicates ((allVars prog) ++ (allVars goal)) 
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
+    sldWithVar vars (Prog rs) (Goal ts) =  Node tsRenameResult (appliedProgramm, finalVars) where
         -- Renaming Goal / Terms in Goals
-        tsRenameResult = renameTerms ts vars
-        tsRenamed = fst tsRenameResult
+        tsRenameResult = rename (Goal ts) vars
+        tsRenamed = fromGoal (fst tsRenameResult)
         varsFirst = snd tsRenameResult
         -- Renaming the Program after Terms where renamed
-        progRenamedResult = renameProgs prog varsFirst
+        progRenamedResult = rename prog varsFirst
         progRenamed = fst progRenamedResult
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
