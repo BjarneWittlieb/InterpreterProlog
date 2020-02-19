@@ -14,26 +14,29 @@ sld :: Prog -> Goal -> SLDTree
 sld prog goal = fst (sldWithVar vars prog goal) where
     vars = killDuplicates ((allVars prog) ++ (allVars goal)) 
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
+    sldWithVar vars prog (Goal ts) = ((Node tsRenamed appliedProgramm), finalVars) where
+        -- Renaming Goal / Terms in Goals
+        tsRenameResult = rename ts vars
+        tsRenamed = fst tsRenameResult
         varsFirst = snd tsRenameResult
         -- Renaming the Program after Terms where renamed
         progRenamedResult = rename prog varsFirst
         progRenamed = fst progRenamedResult
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
-        resultFinnished = searchGoal vars (Goal ts)
-        appliedProgramm = fst resultFinnished
-        finalVars       = snd resultFinnished
+        resultFinished = searchGoal vars (Goal ts) prog
+        appliedProgramm = fst resultFinished
+        finalVars       = snd resultFinished
 
         searchGoal :: [VarName] -> Goal -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
-        searchGoal :: vs (Goal []) prog      = ([], vs)
-        searchGoal :: vs (Goal t:ts) Prog rs = (finalList, finalVs) where
+        searchGoal vs (Goal []) prog      = ([], vs)
+        searchGoal vs (Goal (t:ts)) (Prog rs) = (finalList, finalVs) where
             -- Creating tree for the first term in goal
             resultFirst = programToList vs t rs (Prog rs)
-            listFirs    = fst resultFirst
             vsFirst     = snd resultFirst
             -- Creating tree for all others recursivly
             resultOther = searchGoal vsFirst (Goal ts) (Prog rs)
-            finalList   = (fst resultOther) ++ (resultFirst)
+            finalList   = (fst resultOther) ++ (fst resultFirst)
             finalVs     = snd resultOther
 
         programToList :: [VarName] -> Term -> [Rule] -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
@@ -51,10 +54,9 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         -- Takes a term to pattern match
         -- Takes a rule to apply (try pattern matching)
         -- Takes a program with whom to continue in the rest of the Term
-        ruleToTree :: [VarName] -> Term -> Rule -> Prog -> (Maybe (Subst, SLDTree), VarName)
-        ruleToTree vs goalTerm (Rule t ts) prog = ((subst >>= (\s -> Just (s, tree)), vsAfter) where
+        ruleToTree :: [VarName] -> Term -> Rule -> Prog -> (Maybe (Subst, SLDTree), [VarName])
+        ruleToTree vs goalTerm (Rule t ts) prog = (subst >>= (\s -> Just (s, tree)), vsAfter) where
             subst = unify goalTerm t
-
 
 
 type Strategy = SLDTree -> [Subst]
