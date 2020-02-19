@@ -58,3 +58,49 @@ sld prog goal = fst (sldWithVar vars p g) where
         ruleToTree vs goalTerm (Rule t ts) prog = ((subst >>= (\s -> Just (s, tree)), vsAfter) where
             subst = unify goalTerm t
 
+
+
+type Strategy = SLDTree -> [Subst]
+
+-- depth-first search
+dfs :: Strategy
+dfs (Node [] _) = [empty]
+dfs (Node _ []) = []
+dfs (Node ts (Nothing:ms)) = dfs (Node ts ms)
+dfs (Node ts ((Just (s, sld)):ms)) = (fmap (compose s) (dfs sld)) ++ dfs (Node ts ms)
+
+-- breadth-first search
+bfs :: Strategy
+bfs sld = fst (bfsAcc [(sld, empty)]) where
+  -- increses the deoth of the search one step at a time
+  bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
+  bfsAcc s = let nextStep = foldr concatPair ([],[]) (fmap oneStep s)
+             in concatPair (fst nextStep, []) (bfsAcc (snd nextStep))
+  concatPair :: ([a], [b]) -> ([a], [b]) -> ([a], [b])
+  concatPair (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
+  -- does one step of the SLD-Resolution
+  oneStep :: (SLDTree, Subst) -> ([Subst], [(SLDTree, Subst)])
+  oneStep ((Node [] _), s) = ([s],[])
+  oneStep ((Node _ []), s) = ([],[])
+  oneStep (Node ts (Nothing:ms), s) = oneStep (Node ts ms, s)
+  oneStep (Node ts ((Just (s1, sld)):ms), s2) = let rest = oneStep (Node ts ms, s2) 
+                                                in (fst rest, (sld, compose s2 s1):(snd rest))
+
+-- iterative depth-first search
+idfs :: Strategy
+idfs sld = idfsAcc 0 sld where
+  idfsAcc :: Int -> Strategy
+  idfsAcc i sld = let (sol, b) = bdfs i sld
+                  in if b then sol ++ (idfsAcc (i + 1) sld) else sol
+  -- bounded depth-first search, returns, if there could be more solutions at a higher depth
+  bdfs :: Int -> SLDTree -> ([Subst], Bool)
+  bdfs i _ | i < 0 = ([], True)
+  bdfs i (Node [] _) | i == 0 = ([empty], False)
+                     | i < 0 = ([], False)
+  bdfs _ (Node _ []) = ([], False)
+  bdfs i (Node ts (Nothing:ms)) = bdfs i (Node ts ms)
+  bdfs i (Node ts ((Just (s, sld)):ms)) = let sol = (bdfs (i - 1) sld)
+                                          in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (compose s) (fst sol), snd sol) (bdfs i (Node ts ms))
+
+solve :: Strategy -> Prog -> Goal -> [Subst]
+solve s p g = s (sld p g) 
