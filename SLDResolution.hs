@@ -25,9 +25,10 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         progRenamed = fst progRenamedResult
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
-        resultFinnished = searchGoal vars (Goal ts) prog
-        appliedProgramm = fst resultFinnished
-        finalVars       = snd resultFinnished
+
+        resultFinished = searchGoal vars (Goal ts) prog
+        appliedProgramm = fst resultFinished
+        finalVars       = snd resultFinished
 
         searchGoal :: [VarName] -> Goal -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
         searchGoal vs (Goal []) prog      = ([], vs)
@@ -56,12 +57,12 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         -- Takes a rule to apply (try pattern matching)
         -- Takes a program with whom to continue in the rest of the Term
         ruleToTree :: [VarName] -> Term -> Rule -> Prog -> (Maybe (Subst, SLDTree), [VarName])
-        ruleToTree vs goalTerm (Rule t ts) prog = ((subst >>= (\s -> Just (s, tree)), vsAfter)) where
+
+        ruleToTree vs goalTerm (Rule t ts) prog = (subst >>= (\s -> Just (s, tree)), vsAfter) where
             subst = unify goalTerm t
             result = sldWithVar vs prog (Goal ts)
             tree = fst result
             vsAfter = snd result
-
 
 
 type Strategy = SLDTree -> [Subst]
