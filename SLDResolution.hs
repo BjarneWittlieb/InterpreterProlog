@@ -14,17 +14,13 @@ sld :: Prog -> Goal -> SLDTree
 sld prog goal = fst (sldWithVar vars prog goal) where
     vars = killDuplicates ((allVars prog) ++ (allVars goal)) 
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
-    sldWithVar vars (Prog rs) (Goal ts) =  Node tsRenameResult (appliedProgramm, finalVars) where
-        -- Renaming Goal / Terms in Goals
-        tsRenameResult = rename (Goal ts) vars
-        tsRenamed = fromGoal (fst tsRenameResult)
         varsFirst = snd tsRenameResult
         -- Renaming the Program after Terms where renamed
         progRenamedResult = rename prog varsFirst
         progRenamed = fst progRenamedResult
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
-        resultFinnished = searchGoal vars goal prog
+        resultFinnished = searchGoal vars (Goal ts)
         appliedProgramm = fst resultFinnished
         finalVars       = snd resultFinnished
 

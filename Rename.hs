@@ -63,6 +63,17 @@ instance Renameable Prog where
     firstRule = rename r vs
     rest = rename (Prog rs) vs
 
+instance Renameable a => Renameable [a] where
+  rename [] vs = ([], vs)
+  rename x:xs vs = ((firstRenamed:otherRenamed), finalVs) where
+    -- First renaming the first one and storing new Variables
+    firstResult   = rename x
+    firstRenamed  = fst firstResult
+    firstVs       = snd firstResult
+    -- Then renaming the other ones recursively
+    otherResult   = rename xs
+    otherRenamed  = fst otherResult
+    finalVs       = snd otherResult
 
 fromProg :: Prog -> [Rule]
 fromProg (Prog rs) = rs
