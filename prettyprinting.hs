@@ -20,4 +20,13 @@ instance Pretty Term where
    toList x = [pretty x]
   pretty (Comb "." [x, y]) = "[" ++ (pretty x) ++ "|" ++ (pretty y) ++ "]"
   pretty (Comb c xs) = c ++ "(" ++ (intercalate ", " (fmap pretty xs)) ++ ")" 
+
+instance Pretty Rule where
+  pretty (Rule t ts) = (pretty t) ++ " :- " ++ (intercalate ", " (fmap pretty ts))
+
+instance Pretty Prog where
+  pretty (Prog rs) = intercalate "\n" (fmap pretty rs)
+
+instance Pretty Goal where
+  pretty (Goal ts) = intercalate ", " (fmap pretty ts) 
   

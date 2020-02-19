@@ -24,13 +24,29 @@ empty = Subst []
 single :: VarName -> Term -> Subst
 single v t = Subst [(v, t)]
 
+multiple :: [VarName] -> [Term] -> Subst
+multiple [] _ = empty
+multiple _ [] = empty
+multiple (v:vs) (t:ts) = compose (single v t) (multiple vs ts)
 
--- Applies A Substitution to a Term
-apply :: Subst -> Term -> Term
-apply (Subst []) t = t
-apply (Subst ((x,y):xs)) (Var v) | v == x = y
-                                 | otherwise = apply (Subst xs) (Var v)
-apply s (Comb f xs) = Comb f (fmap (apply s) xs)
+-- Applies A Substitution
+class Substitutable a where 
+  apply :: Subst -> a -> a
+
+instance Substitutable Term where 
+  apply (Subst []) t = t
+  apply (Subst ((x,y):xs)) (Var v) | v == x = y
+                                   | otherwise = apply (Subst xs) (Var v)
+  apply s (Comb f xs) = Comb f (fmap (apply s) xs)
+
+instance Substitutable Rule where
+  apply s (Rule t ts) = Rule (apply s t) (fmap (apply s) ts)
+
+instance Substitutable Prog where
+  apply s (Prog rs) = Prog (fmap (apply s) rs)
+
+instance Substitutable Goal where
+  apply s (Goal ts) = Goal (fmap (apply s) ts)
 
 -- Composing to Substitions
 -- Note that only in the right side Terms of the first substition are updatet!
@@ -41,6 +57,7 @@ compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
   -- Filters the substitutions from the first substitution out of the second (based on the vars on the left side)
   filteredSet = filter (\(x, y) -> (not (elem x (fmap fst xs)))) ys
 
+-- restricts a substitution to a set of variables
 restrictTo :: [VarName] -> Subst -> Subst
 restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
