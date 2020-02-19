@@ -5,7 +5,6 @@ module Main where
 main :: IO ()
 main = do
     putStrLn "Welcome!"
-    loop
 
 -- Loops through the program
 loop :: IO ()
@@ -13,7 +12,6 @@ loop = do
     putStr "?- "
     str <- getLine
     process str
-    loop
 
 process :: String -> IO ()
 process str | head str == ':'   = processCommand (tail str)
@@ -28,3 +26,4 @@ processCommand ('h':_) = do
     putStrLn "  :q          Exits the interactive environtment"
     putStrLn "  :s <strat>  Sets the specified strategy"
     putStrLn "              Where <strat> is one of 'dfs', 'bfs' or 'idfs'."
+    loop
