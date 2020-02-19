@@ -70,14 +70,15 @@ type Strategy = SLDTree -> [Subst]
 
 -- depth-first search
 dfs :: Strategy
-dfs (Node [] _) = [empty]
-dfs (Node _ []) = []
-dfs (Node ts (Nothing:ms)) = dfs (Node ts ms)
-dfs (Node ts ((Just (s, sld)):ms)) = (fmap (compose s) (dfs sld)) ++ dfs (Node ts ms)
+dfs sld = filterVars sld (dfs2 sld) where
+  dfs2 (Node [] _) = [empty]
+  dfs2 (Node _ []) = []
+  dfs2 (Node ts (Nothing:ms)) = dfs2 (Node ts ms)
+  dfs2 (Node ts ((Just (s, sld)):ms)) = (fmap (compose s) (dfs2 sld)) ++ dfs2 (Node ts ms)
 
 -- breadth-first search
 bfs :: Strategy
-bfs sld = fst (bfsAcc [(sld, empty)])
+bfs sld = filterVars sld (fst (bfsAcc [(sld, empty)]))
   -- increses the depth of the search one step at a time
 bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
 bfsAcc [] = ([], [])
@@ -95,7 +96,7 @@ oneStep (Node ts ((Just (s1, sld)):ms), s2) = let rest = oneStep (Node ts ms, s2
 
 -- iterative depth-first search
 idfs :: Strategy
-idfs sld = idfsAcc 0 sld where
+idfs sld = filterVars sld (idfsAcc 0 sld) where
   idfsAcc :: Int -> Strategy
   idfsAcc i sld = let (sol, b) = bdfs i sld
                   in if b then sol ++ (idfsAcc (i + 1) sld) else sol
@@ -108,6 +109,9 @@ idfs sld = idfsAcc 0 sld where
   bdfs i (Node ts (Nothing:ms)) = bdfs i (Node ts ms)
   bdfs i (Node ts ((Just (s, sld)):ms)) = let sol = (bdfs (i - 1) sld)
                                           in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (compose s) (fst sol), snd sol) (bdfs i (Node ts ms))
+
+filterVars :: SLDTree -> [Subst] -> [Subst]
+filterVars (Node ts _) s = fmap (restrictTo (allVars (Goal ts))) s
 
 solve :: Strategy -> Prog -> Goal -> [Subst]
 solve s p g = s (sld p g) 
