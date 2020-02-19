@@ -6,7 +6,7 @@ import Type
 -- Welcomes the User and loops
 main :: IO ()
 main = do
-    putStrLn "Welcome to PROVIN MACHINE!\n\n"
+    putStrLn "Welcome to PROVING MACHINE!\n\n"
     putStrLn "        Nd. 'ccccccccccccccccccccccccccc:.,0MMMM"
     putStrLn "        MWO;,dXMMMMM0l::cccccccccccccokNX;'0MMMM"
     putStrLn "        MMMNd,;kWMMM0;.,xOOOOOOOOOOOxl':x;'0MMMM"
