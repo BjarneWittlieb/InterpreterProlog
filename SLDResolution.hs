@@ -9,6 +9,7 @@ import Unification
 
 -- Data representation of an SLD Tree
 data SLDTree = Node [Term] [Maybe (Subst, SLDTree)]
+  deriving Show
 
 -- A Goal consisits of multiple terms so we return multiple sld trees?
 sld :: Prog -> Goal -> SLDTree
@@ -76,19 +77,20 @@ dfs (Node ts ((Just (s, sld)):ms)) = (fmap (compose s) (dfs sld)) ++ dfs (Node t
 
 -- breadth-first search
 bfs :: Strategy
-bfs sld = fst (bfsAcc [(sld, empty)]) where
-  -- increses the deoth of the search one step at a time
-  bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
-  bfsAcc s = let nextStep = foldr concatPair ([],[]) (fmap oneStep s)
-             in concatPair (fst nextStep, []) (bfsAcc (snd nextStep))
-  concatPair :: ([a], [b]) -> ([a], [b]) -> ([a], [b])
-  concatPair (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
-  -- does one step of the SLD-Resolution
-  oneStep :: (SLDTree, Subst) -> ([Subst], [(SLDTree, Subst)])
-  oneStep ((Node [] _), s) = ([s],[])
-  oneStep ((Node _ []), s) = ([],[])
-  oneStep (Node ts (Nothing:ms), s) = oneStep (Node ts ms, s)
-  oneStep (Node ts ((Just (s1, sld)):ms), s2) = let rest = oneStep (Node ts ms, s2) 
+bfs sld = fst (bfsAcc [(sld, empty)])
+  -- increses the depth of the search one step at a time
+bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
+bfsAcc [] = ([], [])
+bfsAcc s = let nextStep = foldr concatPair ([],[]) (fmap oneStep s)
+           in concatPair (fst nextStep, []) (bfsAcc (snd nextStep))
+concatPair :: ([a], [b]) -> ([a], [b]) -> ([a], [b])
+concatPair (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
+-- does one step of the SLD-Resolution
+oneStep :: (SLDTree, Subst) -> ([Subst], [(SLDTree, Subst)])
+oneStep ((Node [] _), s) = ([s],[])
+oneStep ((Node _ []), s) = ([],[])
+oneStep (Node ts (Nothing:ms), s) = oneStep (Node ts ms, s)
+oneStep (Node ts ((Just (s1, sld)):ms), s2) = let rest = oneStep (Node ts ms, s2) 
                                                 in (fst rest, (sld, compose s2 s1):(snd rest))
 
 -- iterative depth-first search
