@@ -21,7 +21,7 @@ Available are ```dfs```, ```bfs``` and ```idfs```.
 
 ```:q``` to exit the current environment.
 
-```<rule>``` to proof the rule via dfs search.
+```<rule>``` to proof the rule via search of the sld tree.
 
 ## Supported Prolog commands
 
