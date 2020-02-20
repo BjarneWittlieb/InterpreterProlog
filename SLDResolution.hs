@@ -36,7 +36,7 @@ sld prog goal = fst (sldWithVar vars prog goal) where
             vsFirst     = snd resultFirst
             -- Creating tree for all others recursivly
             resultOther = searchGoal vsFirst (Goal ts) (Goal (bs ++ [t])) (Prog rs)
-            finalList   = (fst resultOther) ++ (fst resultFirst)
+            finalList   = (fst resultFirst) ++ (fst resultOther)
             finalVs     = snd resultOther
 
         programToList :: [VarName] -> Term -> Goal -> [Rule] -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
@@ -58,7 +58,7 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         ruleToTree vs goalTerm (Goal xs) (Rule t ts) prog = if (isNothing subst) then (Nothing, vs)
             else (Just (fromJust subst, tree), vsAfter) where
             subst = unify goalTerm t
-            result = sldWithVar vs prog (Goal (apply (fromJust subst) (xs ++ ts)))
+            result = sldWithVar vs prog (Goal (apply (fromJust subst) (ts ++ xs)))
             tree = fst result
             vsAfter = snd result
 
