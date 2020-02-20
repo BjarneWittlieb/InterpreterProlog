@@ -103,10 +103,13 @@ processCommand file strat ('q':_) = do
 
 -- Setting strategy
 processCommand file strat "s dfs" = do
+    putStrLn "Changed Strategy to dfs."
     loop file dfs
 processCommand file strat "s bfs" = do
+    putStrLn "Changed Strategy to bfs."
     loop file bfs
 processCommand file strat "s idfs" = do
+    putStrLn "Changed Strategy to idfs."
     loop file idfs
 
 -- Loading program
