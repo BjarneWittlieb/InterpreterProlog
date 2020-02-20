@@ -60,10 +60,12 @@ goThroughSubs :: [Subst] -> IO ()
 goThroughSubs []   = do
     putStrLn "false."
     return ()
-goThroughSubs (x:xs) = do
-    putStr (pretty x)
-    c <- getLine
-    parseLine c xs
+goThroughSubs (x:xs) =
+    if isTrivial x then do putStrLn "true."
+                           return ()
+                   else do putStr (pretty x)
+                           c <- getLine
+                           parseLine c xs
 
 parseLine :: String -> [Subst] -> IO ()
 parseLine ('.':_) s = do
@@ -72,9 +74,11 @@ parseLine (';':_) [] = do
     putStrLn "false."
     return ()
 parseLine ";" s = goThroughSubs s
-parseLine (';':xs)  (s:ss) = do
-    putStrLn (pretty s)
-    parseLine xs ss
+parseLine (';':xs)  (s:ss) =
+    if isTrivial s then do putStrLn "true."
+                           return ()
+                   else do putStrLn (pretty s)
+                           parseLine xs ss
 parseLine _ s = do
     putStrLn "Expected either '.' or ';'!"
     return ()

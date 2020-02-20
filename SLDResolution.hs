@@ -24,42 +24,41 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
 
-        resultFinished = searchGoal varsAfterProg (Goal ts) progRenamed
+        resultFinished = searchGoal varsAfterProg (Goal ts) (Goal []) progRenamed
         appliedProgramm = fst resultFinished
         finalVars       = snd resultFinished
 
-        searchGoal :: [VarName] -> Goal -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
-        searchGoal vs (Goal []) prog      = ([], vs)
-        searchGoal vs (Goal (t:ts)) (Prog rs) = (finalList, finalVs) where
+        searchGoal :: [VarName] -> Goal -> Goal -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
+        searchGoal vs (Goal []) goal prog      = ([], vs)
+        searchGoal vs (Goal (t:ts)) (Goal bs) (Prog rs) = (finalList, finalVs) where
             -- Creating tree for the first term in goal
-            resultFirst = programToList vs t rs (Prog rs)
+            resultFirst = programToList vs t (Goal (bs ++ ts)) rs (Prog rs)
             vsFirst     = snd resultFirst
             -- Creating tree for all others recursivly
-            resultOther = searchGoal vsFirst (Goal ts) (Prog rs)
+            resultOther = searchGoal vsFirst (Goal ts) (Goal (bs ++ [t])) (Prog rs)
             finalList   = (fst resultOther) ++ (fst resultFirst)
             finalVs     = snd resultOther
 
-        programToList :: [VarName] -> Term -> [Rule] -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
-        programToList vs goalTerm []     prog = ([], vs)
-        programToList vs goalTerm (r:rs) prog = ((treeFromR:restList), finalVs) where
+        programToList :: [VarName] -> Term -> Goal -> [Rule] -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
+        programToList vs goalTerm goal []     prog = ([], vs)
+        programToList vs goalTerm goal (r:rs) prog = ((treeFromR:restList), finalVs) where
             -- Applying the first rule with a given program
-            resultFirst       = ruleToTree vs goalTerm r prog
+            resultFirst       = ruleToTree vs goalTerm goal r prog
             treeFromR         = fst resultFirst
             firstVs           = snd resultFirst
             -- Applying all other Rules recursively
-            restListResult    = programToList firstVs goalTerm rs prog
+            restListResult    = programToList firstVs goalTerm goal rs prog
             restList          = fst restListResult
             finalVs           = snd restListResult
         
         -- Takes a term to pattern match
         -- Takes a rule to apply (try pattern matching)
         -- Takes a program with whom to continue in the rest of the Term
-        ruleToTree :: [VarName] -> Term -> Rule -> Prog -> (Maybe (Subst, SLDTree), [VarName])
-
-        ruleToTree vs goalTerm (Rule t ts) prog = if (isNothing subst) then (Nothing, vs)
+        ruleToTree :: [VarName] -> Term -> Goal -> Rule -> Prog -> (Maybe (Subst, SLDTree), [VarName])
+        ruleToTree vs goalTerm (Goal xs) (Rule t ts) prog = if (isNothing subst) then (Nothing, vs)
             else (Just (fromJust subst, tree), vsAfter) where
             subst = unify goalTerm t
-            result = sldWithVar vs prog (Goal (apply (fromJust subst) ts))
+            result = sldWithVar vs prog (Goal (apply (fromJust subst) (xs ++ ts)))
             tree = fst result
             vsAfter = snd result
 
