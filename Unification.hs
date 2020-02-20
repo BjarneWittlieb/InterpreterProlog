@@ -2,7 +2,6 @@ module Unification where
 
 import Data.Maybe
 
-import Prettyprinting
 import Substitutions
 import Type
 
@@ -27,22 +26,23 @@ ds (Comb f xs) (Comb g ys) | f /= g                     = Just ((Comb f xs), (Co
                                -- throwTogether assumes that the terms have equal length
                                throwTogether :: [a] -> [b] -> [(a, b)]
                                throwTogether [] []         = []
-                               throwTogether (x:xs) (y:ys) = (x, y):(throwTogether xs ys)
+                               throwTogether (x:xs1) (y:ys1) = (x, y):(throwTogether xs1 ys1)
+                               throwTogether _ _ = []
 
 
 -- The unification algorithm
 unify :: Term -> Term -> Maybe Subst
 -- When either the symbols are not equal or the predicates take a different
 -- amount of arguments unification is not possible
-unify t1 t2 = unifyStep t1 t2 empty where
+unify term1 term2 = unifyStep term1 term2 empty where
     unifyStep :: Term -> Term -> Subst -> Maybe Subst
     unifyStep (Comb f xs) (Comb g ys) _ | f /= g                     = Nothing
                                         | (length xs) /= (length ys) = Nothing 
     -- When ds is empty then we are finished
-    unifyStep t1 t2 s | isNothing (ds t1 t2) = Just s
+    unifyStep u1 u2 subst | isNothing (ds u1 u2) = Just subst
     -- When ds is not empty the Subst is changed to the newer version
-                      | otherwise            = unifyStepAcc t1 t2 s x where
-                          x = (fromJust (ds t1 t2))
+                      | otherwise            = unifyStepAcc u1 u2 subst x where
+                          x = (fromJust (ds u1 u2))
                           unifyStepAcc :: Term -> Term -> Subst -> (Term, Term) -> Maybe Subst
                           -- The disagreement set has always a variable in its first argument
                           unifyStepAcc t1 t2 s (Var v, q) = unifyStep t3 t4 s2 where
@@ -50,8 +50,3 @@ unify t1 t2 = unifyStep t1 t2 empty where
                               t3 = apply (single v q) t1
                               t4 = apply (single v q) t2
                           unifyStepAcc _ _ _ _ = Nothing
-
-
-termTest1 = (Comb "." [Comb "true" [], Comb "h" [Var "E", Comb "i" [Var "F"]]])
-termTest2 = (Comb "." [Var "H", Comb "true" [], Comb "j" [Var "I"]])
-termTest3 = (Comb "." [Var "H", Comb "true" [], Comb "j" [Var "M"]])

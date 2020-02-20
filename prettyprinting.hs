@@ -12,7 +12,7 @@ instance Pretty Term where
   pretty (Var v) = v
   pretty (Comb c []) = c
   pretty (Comb "." [Comb c xs, Comb "[]" []]) = "[" ++ (pretty (Comb c xs)) ++ "]"
-  pretty (Comb "." [Comb c xs, Comb "." ys]) = "[" ++ (intercalate ", " (c : toList (Comb "." ys))) ++ "]" where 
+  pretty (Comb "." [Comb char _, Comb "." zs]) = "[" ++ (intercalate ", " (char : toList (Comb "." zs))) ++ "]" where 
    toList :: Term -> [String]
    toList (Comb "." [Comb c xs, Comb "[]" []]) = [pretty (Comb c xs)]
    toList (Comb "." [Comb c xs, Comb "." ys]) = (pretty (Comb c xs)):(toList (Comb "." ys))

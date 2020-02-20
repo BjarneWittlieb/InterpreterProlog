@@ -58,7 +58,7 @@ compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
   -- Substitudes all terms on the right side from the first Substitution with the second
   substitutedSet = (fmap (\(x, y) -> (x, apply (Subst xs) y)) ys)
   -- Filters the substitutions from the first substitution out of the second (based on the vars on the left side)
-  filteredSet = filter (\(x, y) -> (not (elem x (fmap fst ys)))) xs
+  filteredSet = filter (\(x, _) -> (not (elem x (fmap fst ys)))) xs
 
 -- restricts a substitution to a set of variables
 restrictTo :: [VarName] -> Subst -> Subst
@@ -68,12 +68,8 @@ restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs 
 
 isTrivial :: Subst -> Bool
 isTrivial (Subst []) = True
-isTrivial (Subst ((v, t):xs)) = (isVar t) && (isTrivial (Subst xs))
+isTrivial (Subst ((_, t):xs)) = (isVar t) && (isTrivial (Subst xs))
 
 isVar :: Term -> Bool
 isVar (Var _ ) = True
 isVar _ = False
-
--- Substitutions for Testing
-s1 = Subst [("A",Comb "f" [Var "B", Var "_", Comb "true" []])]
-s2 = Subst [("B",Comb "." [Comb "true" [], Var "D"])]

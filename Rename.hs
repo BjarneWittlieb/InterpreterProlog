@@ -3,8 +3,7 @@ module Rename where
 import Data.List
 import Type
 import Vars
-import Substitutions 
-import Prettyprinting
+import Substitutions
 
 class Renameable a where
   rename :: a -> [VarName] -> (a, [VarName])
@@ -14,9 +13,9 @@ class Renameable a where
 -- Renames all variables in a rule, variables from the specified list won't be used
 -- returns the changed Rule and a superset of the input list, including all variables in the changed Rule
 instance Renameable Rule where 
-  rename r vs = (apply (multiple ruleVars (fmap (\x -> (Var x)) substVars)) rule, nub(vs ++ substVars)) where
+  rename r variables = (apply (multiple ruleVars (fmap (\x -> (Var x)) substVars)) rule, nub(variables ++ substVars)) where
     -- replaces all underscore variables first
-    (rule, vars) = (replaceUnderscoreRule r vs)
+    (rule, vars) = (replaceUnderscoreRule r variables)
     -- a list of all variables in the Rule
     ruleVars = allVars rule
     -- a list of all variables, that will be used in the substituted Rule
@@ -51,7 +50,7 @@ instance Renameable Rule where
     combine (a1, b1s) (a2s, b2s) = (a1:a2s, nub (b1s ++ b2s))
 
 instance Renameable Term where
-  rename t vs = let (Rule x xs, ys) = (rename (Rule t []) vs) in (x, ys)
+  rename t vs = let (Rule x _, ys) = (rename (Rule t []) vs) in (x, ys)
 
 instance Renameable Goal where
   rename (Goal []) vs = (Goal [], vs)

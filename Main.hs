@@ -74,7 +74,7 @@ goThroughSubs (x:xs) =
                            parseLine c xs
 
 parseLine :: String -> [Subst] -> IO ()
-parseLine ('.':_) s = do
+parseLine ('.':_) _ = do
     return ()
 parseLine (';':_) [] = do
     putStrLn "false."
@@ -86,7 +86,7 @@ parseLine (';':xs)  (s:ss) =
                            return ()
                    else do putStrLn (pretty s)
                            parseLine xs ss
-parseLine _ s = do
+parseLine _ _ = do
     putStrLn "Expected either '.' or ';'!"
     return ()
     
@@ -105,17 +105,17 @@ processCommand file strat ('h':_) = do
     loop file strat
 
 -- Qutting programm    
-processCommand file strat ('q':_) = do
+processCommand _ _ ('q':_) = do
     putStrLn "Goodbye!"
 
 -- Setting strategy
-processCommand file strat "s dfs" = do
+processCommand file _ "s dfs" = do
     putStrLn "Changed Strategy to dfs."
     loop file dfs
-processCommand file strat "s bfs" = do
+processCommand file _ "s bfs" = do
     putStrLn "Changed Strategy to bfs."
     loop file bfs
-processCommand file strat "s idfs" = do
+processCommand file _ "s idfs" = do
     putStrLn "Changed Strategy to idfs."
     loop file idfs
 
