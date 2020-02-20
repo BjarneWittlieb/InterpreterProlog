@@ -8,6 +8,7 @@ import Substitutions
 import Prettyprinting
 
 import System.IO
+import Data.List
 
 
 -- Welcomes the User and loops
@@ -57,7 +58,7 @@ process file strat cmd        = do
             putStrLn s
             loop file strat
         (Right goal) -> do
-            goThroughSubs (solve strat file goal)
+            goThroughSubs (nub (solve strat file goal))
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()
