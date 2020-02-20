@@ -20,3 +20,7 @@ mult(s(X),Y,Z) :- mult(X,Y,XY), add(XY,Y,Z).
 % leq(X,Y) <=> X<=Y
 leq(o,_).
 leq(s(X),s(Y)) :- leq(X,Y).
+
+% append(L1,L2,L3) <=> list concatenation
+append([]   ,L,L).
+append([E|R],L,[E|RL]) :- append(R,L,RL).

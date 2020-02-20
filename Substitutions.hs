@@ -40,6 +40,7 @@ instance Eq Subst where
                                 | otherwise                 = other:(remove tuple others)
   _ == _ = False
 
+
 -- Special Substitutions
 empty :: Subst
 empty = Subst []

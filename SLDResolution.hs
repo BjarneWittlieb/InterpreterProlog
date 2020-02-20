@@ -14,8 +14,9 @@ data SLDTree = Node [Term] [Maybe (Subst, SLDTree)]
 
 -- A Goal consisits of multiple terms so we return multiple sld trees?
 sld :: Prog -> Goal -> SLDTree
-sld program finalGoal = fst (sldWithVar variables program finalGoal) where
-    variables = killDuplicates ((allVars program) ++ (allVars finalGoal)) 
+sld program finalGoal = fst (sldWithVar variables program noUnderscoreGoal) where
+    variables = killDuplicates ((allVars program) ++ (allVars noUnderscoreGoal)) 
+    noUnderscoreGoal = Goal (fst (replaceList (fromGoal finalGoal) (allVars finalGoal)))
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
     sldWithVar vars prog (Goal terms) = ((Node terms appliedProgramm), finalVars) where
         -- Renaming the Program
@@ -67,15 +68,14 @@ type Strategy = SLDTree -> [Subst]
 
 -- depth-first search
 dfs :: Strategy
-dfs tree = filterVars tree (dfs2 tree) where
-  dfs2 (Node [] _) = [empty]
-  dfs2 (Node _ []) = []
-  dfs2 (Node ts (Nothing:ms)) = dfs2 (Node ts ms)
-  dfs2 (Node ts ((Just (s, tree1)):ms)) = (fmap (\x -> compose x s) (dfs2 tree1)) ++ dfs2 (Node ts ms)
+dfs (Node [] _) = [empty]
+dfs (Node _ []) = []
+dfs (Node ts (Nothing:ms)) = dfs (Node ts ms)
+dfs (Node ts ((Just (s, tree)):ms)) = (fmap (\x -> compose x s) (dfs tree)) ++ dfs (Node ts ms)
 
 -- breadth-first search
 bfs :: Strategy
-bfs tree = filterVars tree (fst (bfsAcc [(tree, empty)]))
+bfs tree = fst (bfsAcc [(tree, empty)])
   -- increses the depth of the search one step at a time
 bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
 bfsAcc [] = ([], [])
@@ -93,7 +93,7 @@ oneStep (Node ts ((Just (s1, tree)):ms), s2) = let rest = oneStep (Node ts ms, s
 
 -- iterative depth-first search
 idfs :: Strategy
-idfs tree1 = filterVars tree1 (idfsAcc 0 tree1) where
+idfs tree1 = idfsAcc 0 tree1 where
   idfsAcc :: Int -> Strategy
   idfsAcc i tree = let (sol, b) = bdfs i tree
                   in if b then sol ++ (idfsAcc (i + 1) tree) else sol
@@ -107,8 +107,6 @@ idfs tree1 = filterVars tree1 (idfsAcc 0 tree1) where
   bdfs i (Node ts ((Just (s, tree)):ms)) = let sol = (bdfs (i - 1) tree)
                                           in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> compose x s) (fst sol), snd sol) (bdfs i (Node ts ms))
 
-filterVars :: SLDTree -> [Subst] -> [Subst]
-filterVars (Node ts _) s = fmap (restrictTo (allVars (Goal ts))) s
 
 solve :: Strategy -> Prog -> Goal -> [Subst]
 solve s p g = s (sld p g) 
