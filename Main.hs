@@ -7,6 +7,8 @@ import Parser
 import Substitutions
 import Prettyprinting
 
+import System.IO
+
 
 -- Welcomes the User and loops
 main :: IO ()
@@ -41,6 +43,8 @@ main = do
 loop :: Prog -> Strategy -> IO ()
 loop file strat = do
     putStr "?- "
+    -- Make sure that ?- is printed before input
+    hFlush stdout
     str <- getLine
     process file strat str
 
@@ -62,6 +66,8 @@ goThroughSubs []   = do
     return ()
 goThroughSubs (x:xs) = do
     putStr (pretty x)
+    -- Make sure that string is put before input
+    hFlush stdout
     c <- getLine
     parseLine c xs
 
@@ -74,6 +80,7 @@ parseLine (';':_) [] = do
 parseLine ";" s = goThroughSubs s
 parseLine (';':xs)  (s:ss) = do
     putStrLn (pretty s)
+    hFlush stdout
     parseLine xs ss
 parseLine _ s = do
     putStrLn "Expected either '.' or ';'!"
