@@ -72,7 +72,7 @@ dfs sld = filterVars sld (dfs2 sld) where
   dfs2 (Node [] _) = [empty]
   dfs2 (Node _ []) = []
   dfs2 (Node ts (Nothing:ms)) = dfs2 (Node ts ms)
-  dfs2 (Node ts ((Just (s, sld)):ms)) = (fmap (compose s) (dfs2 sld)) ++ dfs2 (Node ts ms)
+  dfs2 (Node ts ((Just (s, sld)):ms)) = (fmap (\x -> compose x s) (dfs2 sld)) ++ dfs2 (Node ts ms)
 
 -- breadth-first search
 bfs :: Strategy
@@ -90,7 +90,7 @@ oneStep ((Node [] _), s) = ([s],[])
 oneStep ((Node _ []), s) = ([],[])
 oneStep (Node ts (Nothing:ms), s) = oneStep (Node ts ms, s)
 oneStep (Node ts ((Just (s1, sld)):ms), s2) = let rest = oneStep (Node ts ms, s2) 
-                                                in (fst rest, (sld, compose s2 s1):(snd rest))
+                                                in (fst rest, (sld, compose s1 s2):(snd rest))
 
 -- iterative depth-first search
 idfs :: Strategy
@@ -106,7 +106,7 @@ idfs sld = filterVars sld (idfsAcc 0 sld) where
   bdfs _ (Node _ []) = ([], False)
   bdfs i (Node ts (Nothing:ms)) = bdfs i (Node ts ms)
   bdfs i (Node ts ((Just (s, sld)):ms)) = let sol = (bdfs (i - 1) sld)
-                                          in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (compose s) (fst sol), snd sol) (bdfs i (Node ts ms))
+                                          in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> compose x s) (fst sol), snd sol) (bdfs i (Node ts ms))
 
 filterVars :: SLDTree -> [Subst] -> [Subst]
 filterVars (Node ts _) s = fmap (restrictTo (allVars (Goal ts))) s

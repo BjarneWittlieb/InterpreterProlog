@@ -58,19 +58,27 @@ process file strat cmd        = do
 
 goThroughSubs :: [Subst] -> IO ()
 goThroughSubs []   = do
-    putStrLn "Finnished."
+    putStrLn "false."
     return ()
 goThroughSubs (x:xs) = do
     putStr (pretty x)
-    c <- getChar
-    case c of
-        '.' -> do
-            putStrLn "Finnished."
-            return ()
-        ';' -> goThroughSubs xs
-        _ -> do
-            putStrLn "Expected either '.' or ';'!"
-            return ()
+    c <- getLine
+    parseLine c xs
+
+parseLine :: String -> [Subst] -> IO ()
+parseLine ('.':_) s = do
+    return ()
+parseLine (';':_) [] = do
+    putStrLn "false."
+    return ()
+parseLine ";" s = goThroughSubs s
+parseLine (';':xs)  (s:ss) = do
+    putStrLn (pretty s)
+    parseLine xs ss
+parseLine _ s = do
+    putStrLn "Expected either '.' or ';'!"
+    return ()
+    
 
 processCommand :: Prog -> Strategy -> String -> IO ()
 
