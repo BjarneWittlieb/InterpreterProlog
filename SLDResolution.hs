@@ -5,6 +5,7 @@ import Vars
 import Substitutions
 import Rename
 import Unification
+import Data.Maybe
 
 
 -- Data representation of an SLD Tree
@@ -16,18 +17,14 @@ sld :: Prog -> Goal -> SLDTree
 sld prog goal = fst (sldWithVar vars prog goal) where
     vars = killDuplicates ((allVars prog) ++ (allVars goal)) 
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
-    sldWithVar vars prog (Goal ts) = ((Node tsRenamed appliedProgramm), finalVars) where
-        -- Renaming Goal / Terms in Goals
-        tsRenameResult = rename ts vars
-        tsRenamed = fst tsRenameResult
-        varsFirst = snd tsRenameResult
-        -- Renaming the Program after Terms where renamed
-        progRenamedResult = rename prog varsFirst
+    sldWithVar vars prog (Goal ts) = ((Node ts appliedProgramm), finalVars) where
+        -- Renaming the Program
+        progRenamedResult = rename prog vars
         progRenamed = fst progRenamedResult
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
 
-        resultFinished = searchGoal vars (Goal ts) prog
+        resultFinished = searchGoal varsAfterProg (Goal ts) progRenamed
         appliedProgramm = fst resultFinished
         finalVars       = snd resultFinished
 
@@ -59,9 +56,10 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         -- Takes a program with whom to continue in the rest of the Term
         ruleToTree :: [VarName] -> Term -> Rule -> Prog -> (Maybe (Subst, SLDTree), [VarName])
 
-        ruleToTree vs goalTerm (Rule t ts) prog = (subst >>= (\s -> Just (s, tree)), vsAfter) where
+        ruleToTree vs goalTerm (Rule t ts) prog = if (isNothing subst) then (Nothing, vs)
+            else (Just (fromJust subst, tree), vsAfter) where
             subst = unify goalTerm t
-            result = sldWithVar vs prog (Goal ts)
+            result = sldWithVar vs prog (Goal (apply (fromJust subst) ts))
             tree = fst result
             vsAfter = snd result
 

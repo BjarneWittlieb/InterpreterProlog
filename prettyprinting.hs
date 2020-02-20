@@ -22,7 +22,7 @@ instance Pretty Term where
   pretty (Comb c xs) = c ++ "(" ++ (intercalate ", " (fmap pretty xs)) ++ ")" 
 
 instance Pretty Rule where
-  pretty (Rule t ts) = (pretty t) ++ " :- " ++ (intercalate ", " (fmap pretty ts))
+  pretty (Rule t ts) = (pretty t) ++ " :- " ++ (intercalate ", " (fmap pretty ts)) ++ "."
 
 instance Pretty Prog where
   pretty (Prog rs) = intercalate "\n" (fmap pretty rs)

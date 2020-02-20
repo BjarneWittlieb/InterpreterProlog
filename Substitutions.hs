@@ -48,6 +48,9 @@ instance Substitutable Prog where
 instance Substitutable Goal where
   apply s (Goal ts) = Goal (fmap (apply s) ts)
 
+instance Substitutable a => Substitutable [a] where
+  apply s xs = fmap (apply s) xs
+
 -- Composing to Substitions
 -- Note that only in the right side Terms of the first substition are updatet!
 compose :: Subst -> Subst -> Subst
