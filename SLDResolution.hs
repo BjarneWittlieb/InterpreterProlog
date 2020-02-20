@@ -14,22 +14,22 @@ data SLDTree = Node [Term] [Maybe (Subst, SLDTree)]
 
 -- A Goal consisits of multiple terms so we return multiple sld trees?
 sld :: Prog -> Goal -> SLDTree
-sld prog goal = fst (sldWithVar vars prog goal) where
-    vars = killDuplicates ((allVars prog) ++ (allVars goal)) 
+sld program finalGoal = fst (sldWithVar variables program finalGoal) where
+    variables = killDuplicates ((allVars program) ++ (allVars finalGoal)) 
     sldWithVar :: [VarName] -> Prog -> Goal -> (SLDTree, [VarName])
-    sldWithVar vars prog (Goal ts) = ((Node ts appliedProgramm), finalVars) where
+    sldWithVar vars prog (Goal terms) = ((Node terms appliedProgramm), finalVars) where
         -- Renaming the Program
         progRenamedResult = rename prog vars
         progRenamed = fst progRenamedResult
         varsAfterProg = snd progRenamedResult
         -- applying the whole Programm to the Goal
 
-        resultFinished = searchGoal varsAfterProg (Goal ts) (Goal []) progRenamed
+        resultFinished = searchGoal varsAfterProg (Goal terms) (Goal []) progRenamed
         appliedProgramm = fst resultFinished
         finalVars       = snd resultFinished
 
         searchGoal :: [VarName] -> Goal -> Goal -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
-        searchGoal vs (Goal []) goal prog      = ([], vs)
+        searchGoal vs (Goal []) _ _      = ([], vs)
         searchGoal vs (Goal (t:ts)) (Goal bs) (Prog rs) = (finalList, finalVs) where
             -- Creating tree for the first term in goal
             resultFirst = programToList vs t (Goal (bs ++ ts)) rs (Prog rs)
@@ -40,14 +40,14 @@ sld prog goal = fst (sldWithVar vars prog goal) where
             finalVs     = snd resultOther
 
         programToList :: [VarName] -> Term -> Goal -> [Rule] -> Prog -> ([Maybe (Subst, SLDTree)], [VarName])
-        programToList vs goalTerm goal []     prog = ([], vs)
-        programToList vs goalTerm goal (r:rs) prog = ((treeFromR:restList), finalVs) where
+        programToList vs _ _ [] _ = ([], vs)
+        programToList vs goalTerm goal (r:rs) p = ((treeFromR:restList), finalVs) where
             -- Applying the first rule with a given program
-            resultFirst       = ruleToTree vs goalTerm goal r prog
+            resultFirst       = ruleToTree vs goalTerm goal r p
             treeFromR         = fst resultFirst
             firstVs           = snd resultFirst
             -- Applying all other Rules recursively
-            restListResult    = programToList firstVs goalTerm goal rs prog
+            restListResult    = programToList firstVs goalTerm goal rs p
             restList          = fst restListResult
             finalVs           = snd restListResult
         
@@ -55,10 +55,10 @@ sld prog goal = fst (sldWithVar vars prog goal) where
         -- Takes a rule to apply (try pattern matching)
         -- Takes a program with whom to continue in the rest of the Term
         ruleToTree :: [VarName] -> Term -> Goal -> Rule -> Prog -> (Maybe (Subst, SLDTree), [VarName])
-        ruleToTree vs goalTerm (Goal xs) (Rule t ts) prog = if (isNothing subst) then (Nothing, vs)
+        ruleToTree vs goalTerm (Goal xs) (Rule t ts) p = if (isNothing subst) then (Nothing, vs)
             else (Just (fromJust subst, tree), vsAfter) where
             subst = unify goalTerm t
-            result = sldWithVar vs prog (Goal (apply (fromJust subst) (ts ++ xs)))
+            result = sldWithVar vs p (Goal (apply (fromJust subst) (ts ++ xs)))
             tree = fst result
             vsAfter = snd result
 
@@ -67,15 +67,15 @@ type Strategy = SLDTree -> [Subst]
 
 -- depth-first search
 dfs :: Strategy
-dfs sld = filterVars sld (dfs2 sld) where
+dfs tree = filterVars tree (dfs2 tree) where
   dfs2 (Node [] _) = [empty]
   dfs2 (Node _ []) = []
   dfs2 (Node ts (Nothing:ms)) = dfs2 (Node ts ms)
-  dfs2 (Node ts ((Just (s, sld)):ms)) = (fmap (\x -> compose x s) (dfs2 sld)) ++ dfs2 (Node ts ms)
+  dfs2 (Node ts ((Just (s, tree1)):ms)) = (fmap (\x -> compose x s) (dfs2 tree1)) ++ dfs2 (Node ts ms)
 
 -- breadth-first search
 bfs :: Strategy
-bfs sld = filterVars sld (fst (bfsAcc [(sld, empty)]))
+bfs tree = filterVars tree (fst (bfsAcc [(tree, empty)]))
   -- increses the depth of the search one step at a time
 bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
 bfsAcc [] = ([], [])
@@ -86,17 +86,17 @@ concatPair (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
 -- does one step of the SLD-Resolution
 oneStep :: (SLDTree, Subst) -> ([Subst], [(SLDTree, Subst)])
 oneStep ((Node [] _), s) = ([s],[])
-oneStep ((Node _ []), s) = ([],[])
+oneStep ((Node _ []), _) = ([],[])
 oneStep (Node ts (Nothing:ms), s) = oneStep (Node ts ms, s)
-oneStep (Node ts ((Just (s1, sld)):ms), s2) = let rest = oneStep (Node ts ms, s2) 
-                                                in (fst rest, (sld, compose s1 s2):(snd rest))
+oneStep (Node ts ((Just (s1, tree)):ms), s2) = let rest = oneStep (Node ts ms, s2) 
+                                                in (fst rest, (tree, compose s1 s2):(snd rest))
 
 -- iterative depth-first search
 idfs :: Strategy
-idfs sld = filterVars sld (idfsAcc 0 sld) where
+idfs tree1 = filterVars tree1 (idfsAcc 0 tree1) where
   idfsAcc :: Int -> Strategy
-  idfsAcc i sld = let (sol, b) = bdfs i sld
-                  in if b then sol ++ (idfsAcc (i + 1) sld) else sol
+  idfsAcc i tree = let (sol, b) = bdfs i tree
+                  in if b then sol ++ (idfsAcc (i + 1) tree) else sol
   -- bounded depth-first search, returns, if there could be more solutions at a higher depth
   bdfs :: Int -> SLDTree -> ([Subst], Bool)
   bdfs i _ | i < 0 = ([], True)
@@ -104,7 +104,7 @@ idfs sld = filterVars sld (idfsAcc 0 sld) where
                      | i < 0 = ([], False)
   bdfs _ (Node _ []) = ([], False)
   bdfs i (Node ts (Nothing:ms)) = bdfs i (Node ts ms)
-  bdfs i (Node ts ((Just (s, sld)):ms)) = let sol = (bdfs (i - 1) sld)
+  bdfs i (Node ts ((Just (s, tree)):ms)) = let sol = (bdfs (i - 1) tree)
                                           in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> compose x s) (fst sol), snd sol) (bdfs i (Node ts ms))
 
 filterVars :: SLDTree -> [Subst] -> [Subst]
