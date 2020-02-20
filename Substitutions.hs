@@ -66,6 +66,14 @@ restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
                              | otherwise = restrictTo vs (Subst xs) 
 
+isTrivial :: Subst -> Bool
+isTrivial (Subst []) = True
+isTrivial (Subst ((v, t):xs)) = (isVar t) && (isTrivial (Subst xs))
+
+isVar :: Term -> Bool
+isVar (Var _ ) = True
+isVar _ = False
+
 -- Substitutions for Testing
 s1 = Subst [("A",Comb "f" [Var "B", Var "_", Comb "true" []])]
 s2 = Subst [("B",Comb "." [Comb "true" [], Var "D"])]
