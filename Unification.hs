@@ -38,7 +38,7 @@ unify t1 t2 = unifyStep t1 t2 empty where
     unifyStep :: Term -> Term -> Subst -> Maybe Subst
     unifyStep (Comb f xs) (Comb g ys) _ | f /= g                     = Nothing
                                         | (length xs) /= (length ys) = Nothing 
-    -- When ds is empty then we are Finnished
+    -- When ds is empty then we are finished
     unifyStep t1 t2 s | isNothing (ds t1 t2) = Just s
     -- When ds is not empty the Subst is changed to the newer version
                       | otherwise            = unifyStepAcc t1 t2 s x where
@@ -47,8 +47,8 @@ unify t1 t2 = unifyStep t1 t2 empty where
                           -- The disagreement set has always a variable in its first argument
                           unifyStepAcc t1 t2 s (Var v, q) = unifyStep t3 t4 s2 where
                               s2 = compose (single v q) s
-                              t3 = apply s2 t1
-                              t4 = apply s2 t2
+                              t3 = apply (single v q) t1
+                              t4 = apply (single v q) t2
                           unifyStepAcc _ _ _ _ = Nothing
 
 

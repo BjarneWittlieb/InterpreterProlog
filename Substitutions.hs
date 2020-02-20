@@ -56,9 +56,9 @@ instance Substitutable a => Substitutable [a] where
 compose :: Subst -> Subst -> Subst
 compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
   -- Substitudes all terms on the right side from the first Substitution with the second
-  substitutedSet = (fmap (\(x, y) -> (x, apply (Subst ys) y)) xs)
+  substitutedSet = (fmap (\(x, y) -> (x, apply (Subst xs) y)) ys)
   -- Filters the substitutions from the first substitution out of the second (based on the vars on the left side)
-  filteredSet = filter (\(x, y) -> (not (elem x (fmap fst xs)))) ys
+  filteredSet = filter (\(x, y) -> (not (elem x (fmap fst ys)))) xs
 
 -- restricts a substitution to a set of variables
 restrictTo :: [VarName] -> Subst -> Subst
