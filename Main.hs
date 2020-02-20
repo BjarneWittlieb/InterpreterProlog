@@ -9,6 +9,7 @@ import Prettyprinting
 import Vars
 
 import System.IO
+import Data.List
 
 
 -- Welcomes the User and loops
@@ -58,7 +59,11 @@ process file strat cmd        = do
             putStrLn s
             loop file strat
         (Right goal) -> do
+<<<<<<< HEAD
             goThroughSubs (killDuplicates (solve strat file goal))
+=======
+            goThroughSubs (nub (solve strat file goal))
+>>>>>>> 5fff4816d3cb51aeb699bbb313053b948a087d38
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()

@@ -19,6 +19,26 @@ instance Pretty Subst where
 instance Vars Subst where
   allVars (Subst xs) = killDuplicates (foldr (++) [] (fmap (\(x, y) -> x:allVars(y)) xs))
 
+instance Eq Subst where
+  (Subst []) == (Subst [])     = True
+  (Subst (t:ts)) == (Subst us)  = (contains us t) && ((Subst ts) == (Subst (remove t us))) where
+    contains :: [(VarName,Term)] -> (VarName, Term) -> Bool
+    contains [] _               = False
+    contains (tuple:tuples) tu | (isEqualOne tuple tu) = True
+                                | otherwise                   = contains tuples tu
+    isEqualOne :: (VarName,Term) -> (VarName,Term) -> Bool
+    isEqualOne (name1, (Var x)) (name2, (Var y))          = (x == y) && (name1 == name2)
+    isEqualOne (name1, (Comb f xs)) (name2, (Comb g ys))  = (f == g) && (isEqual xs ys) && (name1 == name2)
+    isEqualOne _ _                                        = False
+    isEqual :: [Term] -> [Term] -> Bool
+    isEqual [] []                       = True
+    isEqual (term:terms) (other:others) = (isEqualOne ("", term) ("", other)) && (isEqual terms others)
+    isEqual _ _                         = False
+    remove :: (VarName,Term) -> [(VarName,Term)] -> [(VarName,Term)]
+    remove _ []                                    = []
+    remove tuple (other:others) | (isEqualOne tuple other)  = others
+                                | otherwise                 = other:(remove tuple others)
+  _ == _ = False
 
 -- Special Substitutions
 empty :: Subst
