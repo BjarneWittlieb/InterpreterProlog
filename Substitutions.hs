@@ -10,6 +10,9 @@ import Vars
 data Subst = Subst [(VarName, Term)]
   deriving Show
 
+
+        
+
 instance Pretty Subst where
   pretty (Subst xs) = "{" ++ (intercalate ", " (fmap (\(x, y) -> x ++ " -> " ++ (pretty y)) xs)) ++ "}"
 

@@ -6,6 +6,7 @@ import SLDResolution
 import Parser
 import Substitutions
 import Prettyprinting
+import Vars
 
 import System.IO
 
@@ -57,7 +58,7 @@ process file strat cmd        = do
             putStrLn s
             loop file strat
         (Right goal) -> do
-            goThroughSubs (solve strat file goal)
+            goThroughSubs (killDuplicates (solve strat file goal))
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()
