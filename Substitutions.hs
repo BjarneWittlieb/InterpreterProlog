@@ -8,10 +8,7 @@ import Vars
 
 -- Instanciating Subst
 data Subst = Subst [(VarName, Term)]
-  deriving Show
-
-
-        
+  deriving Show       
 
 instance Pretty Subst where
   pretty (Subst xs) = "{" ++ (intercalate ", " (fmap (\(x, y) -> x ++ " -> " ++ (pretty y)) xs)) ++ "}"
@@ -20,6 +17,7 @@ instance Vars Subst where
   allVars (Subst xs) = killDuplicates (foldr (++) [] (fmap (\(x, y) -> x:allVars(y)) xs))
 
 
+-- Kann raus, übers Ziel hinaus
 instance Eq Subst where
   (Subst xs) == (Subst ys) = foldr (&&) True ((fmap (inSubst xs) ys) ++ (fmap (inSubst ys) xs)) where
     inSubst :: [(VarName, Term)] -> (VarName, Term) -> Bool

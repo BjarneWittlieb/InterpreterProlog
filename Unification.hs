@@ -19,11 +19,12 @@ ds (Comb f xs) (Comb g ys) | f /= g                     = Just ((Comb f xs), (Co
                            | (length xs) /= (length ys) = Just ((Comb f xs), (Comb g ys))
                            | otherwise                  = listToMaybe (catMaybes (fmap (uncurry ds) xys)) where
                                xys = throwTogether xs ys
+                               -- aka zip
                                -- throwTogether assumes that the terms have equal length
                                throwTogether :: [a] -> [b] -> [(a, b)]
-                               throwTogether [] []         = []
+                               throwTogether [] []           = []
                                throwTogether (x:xs1) (y:ys1) = (x, y):(throwTogether xs1 ys1)
-                               throwTogether _ _ = []
+                               throwTogether _ _             = []
 
 
 -- The unification algorithm
@@ -35,6 +36,7 @@ unify term1 term2 = unifyStep term1 term2 empty where
     unifyStep (Comb f xs) (Comb g ys) _ | f /= g                     = Nothing
                                         | (length xs) /= (length ys) = Nothing 
     -- When ds is empty then we are finished
+    -- add case for more efficiency      VVV
     unifyStep u1 u2 subst | isNothing (ds u1 u2) = Just subst
     -- When ds is not empty the Subst is changed to the newer version
                       | otherwise            = unifyStepAcc u1 u2 subst x where
