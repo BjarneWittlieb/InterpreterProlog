@@ -14,7 +14,7 @@ instance Pretty Term where
   pretty (Var v) = v
   -- if the Term is a constant, return it
   pretty (Comb c []) = c
-  pretty (Comb "." [x, y]) = "[" ++ (intercalate ", " (toList (x, y))) ++ "]" where
+  pretty (Comb "." [a, b]) = "[" ++ (intercalate ", " (toList (a, b))) ++ "]" where
     toList :: (Term, Term) -> [String]
     toList (x, Comb "[]" []) = [pretty x]
     toList (x, Comb "." [y, z]) = (pretty x):(toList (y, z))

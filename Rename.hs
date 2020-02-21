@@ -17,12 +17,15 @@ replaceUnderscore :: Term -> State [VarName] Term
 -- The actual replacing
 replaceUnderscore (Var "_") = state (\vs -> let newVar = head (filter (\x -> (not (elem x vs))) freshVars) in (Var newVar, newVar:vs))
 -- Nothing to replace
-replaceUnderscore (Var x) = state (\vs -> ((Var x), vs))
+replaceUnderscore (Var x) = pure (Var x)
 -- Replace within list
 replaceUnderscore (Comb f xs) = state (\vs -> let rlist = runState (replaceList xs) vs in ((Comb f (fst rlist)), snd rlist))
   
 replaceList :: [Term] -> State [VarName] [Term]
-replaceList ys = foldr (flip (>>=)) (pure []) (fmap (\t -> (\xs -> state (\vs -> let (x, v) = runState (replaceUnderscore t) vs in (x:xs, v)))) ys)
+replaceList ys = listState ys replaceUnderscore
+
+listState :: [a] -> (a -> State b c) -> (State b [c])
+listState xs st = foldr (flip (>>=)) (pure []) (fmap (\x -> (\ys -> state (\zs -> let (y, z) = runState (st x) zs in (y:ys, z)))) xs)
 
 -- Renames all variables in a rule, variables from the specified list won't be used
 -- returns the changed Rule and a superset of the input list, including all variables in the changed Rule
@@ -35,22 +38,22 @@ instance Renameable Rule where
       ruleVars = allVars rule
       -- a list of all variables, that will be used in the substituted Rule
       substVars = take (length ruleVars) (filter (\x -> not (elem x vars)) freshVars)
-      -- replaces all underscore variables in a Rule
-      replaceUnderscoreRule :: Rule -> State [VarName] Rule
-      replaceUnderscoreRule (Rule t ts) = (replaceUnderscore t) >>= (\x -> (state (\vs -> let (xs, v) = runState (replaceList ts) vs in (Rule x xs, v))))
-
+      
+-- replaces all underscore variables in a Rule
+replaceUnderscoreRule :: Rule -> State [VarName] Rule
+replaceUnderscoreRule (Rule t ts) = (replaceUnderscore t) >>= (\x -> (state (\vs -> let (xs, v) = runState (replaceList ts) vs in (Rule x xs, v))))
 
 instance Renameable Term where
   rename t = state (\vs -> let (Rule x _, ys) = runState (rename (Rule t [])) vs in (x, ys))
 
 instance Renameable Goal where
-  rename (Goal ts) = state (\vs -> let (ts', v) = runState (rename ts) vs in (Goal ts', v))
+  rename (Goal ts) = state (\vs -> let (Rule _ ts', v) = runState (rename (Rule (Comb "" []) ts)) vs in (Goal ts', v))
 
 instance Renameable Prog where
   rename (Prog rs) = state (\vs -> let (rs', v) = runState (rename rs) vs in (Prog rs', v))
 
 instance (Renameable a) => Renameable [a] where
-  rename xs = foldr (flip (>>=)) (pure []) (fmap (\x -> (\ys -> state (\vs -> let (y, v) = runState (rename x) vs in (y:ys, v)))) xs)
+  rename xs = listState xs rename
 
 -- helper functions to get the inside of Prog, Goal, Rule
 fromProg :: Prog -> [Rule]
