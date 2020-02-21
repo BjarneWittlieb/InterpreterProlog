@@ -24,3 +24,7 @@ leq(s(X),s(Y)) :- leq(X,Y).
 % append(L1,L2,L3) <=> list concatenation
 append([]   ,L,L).
 append([E|R],L,[E|RL]) :- append(R,L,RL).
+
+equal(X, X).
+equal3(X, X, X).
+equal4(X, X, X, X).

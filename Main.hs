@@ -59,21 +59,21 @@ process file strat cmd        = do
             putStrLn s
             loop file strat
         (Right goal) -> do
-            goThroughSubs (nub (fmap (restrictTo (allVars goal)) (solve strat file goal)))
+            let goalVars = allVars goal in goThroughSubs (nub (fmap (restrictTo goalVars) (fmap (simplify goalVars) (solve strat file goal))))
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()
-goThroughSubs []   = do
+goThroughSubs [] = do
     putStrLn "false."
     return ()
 
 goThroughSubs (x:xs) =
-    if isTrivial x then do putStrLn "true."
-                           return ()
-                   else do putStr (pretty x)
-                           hFlush stdout
-                           c <- getLine
-                           parseLine c xs
+    if (== empty) x then do putStrLn "true."
+                            return ()
+                    else do putStr (pretty x)
+                            hFlush stdout
+                            c <- getLine
+                            parseLine c xs
 
 parseLine :: String -> [Subst] -> IO ()
 parseLine ('.':_) _ = do
@@ -83,11 +83,11 @@ parseLine (';':_) [] = do
     return ()
 parseLine ";" s = goThroughSubs s
 
-parseLine (';':xs)  (s:ss) =
-    if isTrivial s then do putStrLn "true."
-                           return ()
-                   else do putStrLn (pretty s)
-                           parseLine xs ss
+parseLine (';':xs) (s:ss) =
+    if (== empty) s then do putStrLn "true."
+                            return ()
+                    else do putStrLn (pretty s)
+                            parseLine xs ss
 parseLine _ _ = do
     putStrLn "Expected either '.' or ';'!"
     return ()

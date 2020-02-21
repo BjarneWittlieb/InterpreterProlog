@@ -19,27 +19,17 @@ instance Pretty Subst where
 instance Vars Subst where
   allVars (Subst xs) = killDuplicates (foldr (++) [] (fmap (\(x, y) -> x:allVars(y)) xs))
 
-instance Eq Subst where
-  (Subst []) == (Subst [])     = True
-  (Subst (t:ts)) == (Subst us)  = (contains us t) && ((Subst ts) == (Subst (remove t us))) where
-    contains :: [(VarName,Term)] -> (VarName, Term) -> Bool
-    contains [] _               = False
-    contains (tuple:tuples) tu | (isEqualOne tuple tu) = True
-                                | otherwise                   = contains tuples tu
-    isEqualOne :: (VarName,Term) -> (VarName,Term) -> Bool
-    isEqualOne (name1, (Var x)) (name2, (Var y))          = (x == y) && (name1 == name2)
-    isEqualOne (name1, (Comb f xs)) (name2, (Comb g ys))  = (f == g) && (isEqual xs ys) && (name1 == name2)
-    isEqualOne _ _                                        = False
-    isEqual :: [Term] -> [Term] -> Bool
-    isEqual [] []                       = True
-    isEqual (term:terms) (other:others) = (isEqualOne ("", term) ("", other)) && (isEqual terms others)
-    isEqual _ _                         = False
-    remove :: (VarName,Term) -> [(VarName,Term)] -> [(VarName,Term)]
-    remove _ []                                    = []
-    remove tuple (other:others) | (isEqualOne tuple other)  = others
-                                | otherwise                 = other:(remove tuple others)
-  _ == _ = False
 
+instance Eq Subst where
+  (Subst xs) == (Subst ys) = foldr (&&) True ((fmap (inSubst xs) ys) ++ (fmap (inSubst ys) xs)) where
+    inSubst :: [(VarName, Term)] -> (VarName, Term) -> Bool
+    inSubst [] _ = False
+    inSubst ((v', t'):zs) (v, t) = ((v == v') && (termEq t t')) || (inSubst zs (v, t))
+ 
+termEq :: Term -> Term -> Bool
+termEq (Var x) (Var y) = x == y
+termEq (Comb f xs) (Comb g ys) = f == g && (foldr (&&) True (fmap (uncurry termEq) (zip xs ys)))
+termEq _ _ = False
 
 -- Special Substitutions
 empty :: Subst
@@ -90,10 +80,18 @@ restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
                              | otherwise = restrictTo vs (Subst xs) 
 
-isTrivial :: Subst -> Bool
-isTrivial (Subst []) = True
-isTrivial (Subst ((_, t):xs)) = (isVar t) && (isTrivial (Subst xs))
+simplify :: [VarName] -> Subst -> Subst
+simplify vars s = compose (invert (fst subSplit)) (snd subSplit) where
+  subSplit = splitTrivialSubst s vars
+  splitTrivialSubst :: Subst -> [VarName] -> (Subst, Subst)
+  splitTrivialSubst (Subst []) _ = (empty, empty)
+  splitTrivialSubst (Subst ((v, Var w):xs)) vs | (not (elem w vs)) = (Subst ((v, Var w):(fromSubst (fst rest))), (snd rest)) where
+    rest = splitTrivialSubst (compose (single w (Var v)) (Subst xs)) vs
+  splitTrivialSubst (Subst (x:xs)) vs = (\a (b, c) -> (b, Subst (a:(fromSubst c)))) x (splitTrivialSubst (Subst xs) vs)
+  invert :: Subst -> Subst
+  invert (Subst ((v, Var w):xs)) = Subst ((w, Var v):(fromSubst (invert (Subst xs))))
+  invert _ = empty
 
-isVar :: Term -> Bool
-isVar (Var _ ) = True
-isVar _ = False
+
+fromSubst :: Subst -> [(VarName, Term)]
+fromSubst (Subst x) = x
