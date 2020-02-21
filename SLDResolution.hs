@@ -17,37 +17,25 @@ data SLDTree = Node Goal [(Subst, SLDTree)]
 sld :: Prog -> Goal -> SLDTree
 sld program finalGoal = fst (runState (sldWithVar program noUnderscoreGoal) variables) where
     variables = (allVars program) ++ (allVars noUnderscoreGoal)
-    noUnderscoreGoal = fst (runState (rename finalGoal) (allVars finalGoal))
+    noUnderscoreGoal = Goal (fst (runState (replaceList (fromGoal finalGoal)) (allVars finalGoal)))
     -- main function, that does the SLD resultion, tracks all currently used variables along the way
     sldWithVar :: Prog -> Goal -> State [VarName] SLDTree
-    sldWithVar pr goal = state f where
-        f vars = let (appliedProgramm, finalVars) = runState ((rename pr) >>= (searchGoal goal)) vars in
-            ((Node goal appliedProgramm), finalVars)
-        -- searches for all possible substitutions
-        searchGoal :: Goal -> Prog -> State [VarName] [(Subst, SLDTree)] 
-        searchGoal (Goal ts) prog = state g  where
-          g vs = ((concat (fst st)), fst (snd st)) where
-            st = runState (listState ts (\t -> state (\(vs', (g1, Goal (_:g2))) -> let (s, v) = (runState (programToList (Goal ts) prog t) vs') in
-              (s, (v, (Goal ((fromGoal g1) ++ [t]), Goal g2)))))) (vs, (Goal [], Goal ts))
-        -- searches through all rules and tries to apply them to a term
-        programToList :: Goal -> Prog -> Term -> State [VarName] [(Subst, SLDTree)]
-        programToList goal' (Prog rs) goalTerm = state (\s -> (removeMaybe (fst (st s)), snd (st s))) where
-            st = runState (listState rs (ruleToTree goalTerm goal' (Prog rs)))
-        
+    sldWithVar pr goal = state (\vars -> let (appliedProgramm, finalVars) = runState ((rename pr) >>= (programToList goal)) vars in
+            ((Node goal appliedProgramm), finalVars)) where
+         -- searches through all rules and tries to apply them to the first term
+        programToList :: Goal -> Prog -> State [VarName] [(Subst, SLDTree)]
+        programToList g (Prog rs) = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
+            st = runState (listState rs (resolutionStep g (Prog rs)))
         -- Takes a term to pattern match
         -- Takes a rule to apply (try pattern matching)
-        -- Takes a program with whom to continue in the rest of the Term
-        ruleToTree :: Term -> Goal -> Prog -> Rule -> State [VarName] (Maybe (Subst, SLDTree))
-        ruleToTree goalTerm (Goal xs) p (Rule t ts) = if (isNothing subst) then pure Nothing
+        -- Takes a program and a goal with which to continue further
+        resolutionStep :: Goal -> Prog -> Rule -> State [VarName] (Maybe (Subst, SLDTree))
+        resolutionStep (Goal []) _ _ = pure Nothing
+        resolutionStep (Goal (x:xs)) p (Rule t ts) = if (isNothing subst) then pure Nothing
             else state g where
             g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) (ts ++ xs)))) vs in
                 (Just (fromJust subst, tree), vsAfter)
-            subst = unify goalTerm t
-
-removeMaybe :: [Maybe a] -> [a]
-removeMaybe [] = []
-removeMaybe (Nothing:xs) = removeMaybe xs
-removeMaybe ((Just x):xs) = x:(removeMaybe xs)
+            subst = unify x t
 
 -- State b c = state b -> (c, b)
 -- listState :: [a] -> (a -> State b c) -> (State b [c])
@@ -97,7 +85,8 @@ idfs tree1 = idfsAcc 0 tree1 where
 solve :: Strategy -> Prog -> Goal -> [Subst]
 solve s p g = s (sld p g) 
 
-{-module SLDResolution where
+{-
+module SLDResolution where
 
 import Type
 import Vars
@@ -208,4 +197,5 @@ idfs tree1 = idfsAcc 0 tree1 where
 
 -- solves a goal with a strategie using all rules from a program
 solve :: Strategy -> Prog -> Goal -> [Subst]
-solve s p g = s (sld p g) -}
+solve s p g = s (sld p g)
+-}

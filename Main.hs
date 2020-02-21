@@ -9,7 +9,6 @@ import Prettyprinting
 import Vars
 
 import System.IO
-import Data.List
 
 
 -- Welcomes the User and loops
@@ -63,7 +62,7 @@ process file strat cmd        = do
             loop file strat
         -- if the parse was successful, solve the goal and call goThroughSubs to generate the output 
         (Right goal) -> do
-            let goalVars = allVars goal in goThroughSubs (nub (fmap (restrictTo goalVars) (fmap (simplify goalVars) (solve strat file goal))))
+            let goalVars = allVars goal in goThroughSubs (fmap (restrictTo goalVars) (fmap (simplify goalVars) (solve strat file goal)))
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()

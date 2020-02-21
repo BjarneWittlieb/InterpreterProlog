@@ -65,7 +65,8 @@ fromGoal (Goal ts) = ts
 fromRule :: Rule -> [Term]
 fromRule (Rule t ts) = t:ts  
 
-{-module Rename where
+{-
+module Rename where
 
 import Data.List
 import Type
