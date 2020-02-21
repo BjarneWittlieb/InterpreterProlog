@@ -7,8 +7,8 @@ import Rename
 import Unification
 import Data.Maybe
 
-
 -- Data representation of an SLD Tree
+-- aka goal
 data SLDTree = Node [Term] [Maybe (Subst, SLDTree)]
   deriving Show
 

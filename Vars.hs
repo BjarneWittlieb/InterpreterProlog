@@ -7,6 +7,7 @@ import Type
 class Vars a where
     allVars :: a -> [VarName]
 
+-- Concatmap
 instance Vars Term where
     allVars (Var x) = [x]
     allVars (Comb _ xs) = killDuplicates (foldr (++) [] (fmap allVars xs))

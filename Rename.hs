@@ -5,6 +5,7 @@ import Type
 import Vars
 import Substitutions
 
+-- Try State monade?
 class Renameable a where
   rename :: a -> [VarName] -> (a, [VarName])
 
