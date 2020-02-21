@@ -75,6 +75,7 @@ instance (Renameable a) => Renameable [a] where
     otherRenamed  = fst otherResult
     finalVs       = snd otherResult
 
+-- helper functions to get the inside of Prog, Goal, Rule
 fromProg :: Prog -> [Rule]
 fromProg (Prog rs) = rs
 

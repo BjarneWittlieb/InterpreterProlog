@@ -3,7 +3,7 @@ module Vars where
 import Type
 
 -- allVars is a function that will return all contained Variables within a certain type
--- The implementation also should eliminate duplicates
+-- The implementation should eliminate duplicates
 class Vars a where
     allVars :: a -> [VarName]
 

@@ -25,7 +25,8 @@ instance Eq Subst where
     inSubst :: [(VarName, Term)] -> (VarName, Term) -> Bool
     inSubst [] _ = False
     inSubst ((v', t'):zs) (v, t) = ((v == v') && (termEq t t')) || (inSubst zs (v, t))
- 
+
+-- checks, if two terms are equal
 termEq :: Term -> Term -> Bool
 termEq (Var x) (Var y) = x == y
 termEq (Comb f xs) (Comb g ys) = f == g && (foldr (&&) True (fmap (uncurry termEq) (zip xs ys)))
@@ -66,12 +67,12 @@ instance Substitutable a => Substitutable [a] where
   apply s xs = fmap (apply s) xs
 
 -- Composing to Substitions
--- Note that only in the right side Terms of the first substition are updatet!
+-- Note that only in the right side Terms of the first substition are updated!
 compose :: Subst -> Subst -> Subst
 compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
-  -- Substitudes all terms on the right side from the first Substitution with the second
+  -- Substitutes all terms on the right side from the first Substitution with the second
   substitutedSet = (fmap (\(x, y) -> (x, apply (Subst xs) y)) ys)
-  -- Filters the substitutions from the first substitution out of the second (based on the vars on the left side)
+  -- Filters the substitutions from the first substitution out of the second one (based on the vars on the left side)
   filteredSet = filter (\(x, _) -> (not (elem x (fmap fst ys)))) xs
 
 -- restricts a substitution to a set of variables
@@ -80,6 +81,7 @@ restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
                              | otherwise = restrictTo vs (Subst xs) 
 
+-- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
 simplify vars s = compose (invert (fst subSplit)) (snd subSplit) where
   subSplit = splitTrivialSubst s vars
@@ -88,6 +90,7 @@ simplify vars s = compose (invert (fst subSplit)) (snd subSplit) where
   splitTrivialSubst (Subst ((v, Var w):xs)) vs | (not (elem w vs)) = (Subst ((v, Var w):(fromSubst (fst rest))), (snd rest)) where
     rest = splitTrivialSubst (compose (single w (Var v)) (Subst xs)) vs
   splitTrivialSubst (Subst (x:xs)) vs = (\a (b, c) -> (b, Subst (a:(fromSubst c)))) x (splitTrivialSubst (Subst xs) vs)
+  -- inverts a substitutiom (if possible
   invert :: Subst -> Subst
   invert (Subst ((v, Var w):xs)) = Subst ((w, Var v):(fromSubst (invert (Subst xs))))
   invert _ = empty

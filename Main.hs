@@ -50,23 +50,30 @@ loop file strat = do
     str <- getLine
     process file strat str
 
+-- processes an input string
 process :: Prog -> Strategy -> String -> IO ()
+-- if it starts with an ':', call processCommand
 process file strat (':':cmd)  = processCommand file strat cmd
+-- otherwise try to parse the string
 process file strat cmd        = do
     let x = parse cmd
     case x of
         (Left s) -> do
             putStrLn s
             loop file strat
+        -- if the parse was successful, solve the goal and call goThroughSubs to generate the output 
         (Right goal) -> do
             let goalVars = allVars goal in goThroughSubs (nub (fmap (restrictTo goalVars) (fmap (simplify goalVars) (solve strat file goal))))
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()
+-- if there are no more substitutions, output 'false'
 goThroughSubs [] = do
     putStrLn "false."
     return ()
-
+-- otherwise output the first substitution:
+-- if the substitution is empty, output 'true' and return
+-- otherwise output the substitution and wait for user input
 goThroughSubs (x:xs) =
     if (== empty) x then do putStrLn "true."
                             return ()
@@ -75,19 +82,24 @@ goThroughSubs (x:xs) =
                             c <- getLine
                             parseLine c xs
 
+-- parses user input while being in the process of outputting the substititutions
 parseLine :: String -> [Subst] -> IO ()
+-- return, if a the input is a '.'
 parseLine ('.':_) _ = do
     return ()
+-- print 'false' and return, if there are no more solutions
 parseLine (';':_) [] = do
     putStrLn "false."
     return ()
+-- call goThroughSubs, if the input is just a ',', which will output the next substitution and get the next user input
 parseLine ";" s = goThroughSubs s
-
+-- output the next substitution, if the input is a ','
 parseLine (';':xs) (s:ss) =
     if (== empty) s then do putStrLn "true."
                             return ()
                     else do putStrLn (pretty s)
                             parseLine xs ss
+-- otherwise print an error message and return
 parseLine _ _ = do
     putStrLn "Expected either '.' or ';'!"
     return ()

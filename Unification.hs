@@ -8,10 +8,6 @@ import Type
 
 -- Calculates the first different values of the disagreement set for two terms
 ds :: Term -> Term -> Maybe (Term, Term)
--- Edge cases for the underscore
-ds (Var "_") (Var "_") = Nothing
-ds (Var "_") y         = Just ((Var "_"), y)
-ds x (Var "_")         = Just (x, (Var "_"))
 -- To variables are equal if and only if they have the same name
 ds (Var x) (Var y)         | x == y                     = Nothing
                            | otherwise                  = Just ((Var x), (Var y))
@@ -44,9 +40,10 @@ unify term1 term2 = unifyStep term1 term2 empty where
                       | otherwise            = unifyStepAcc u1 u2 subst x where
                           x = (fromJust (ds u1 u2))
                           unifyStepAcc :: Term -> Term -> Subst -> (Term, Term) -> Maybe Subst
-                          -- The disagreement set has always a variable in its first argument
+                          -- if the ds has a variable in its first argument, the substitution is possible
                           unifyStepAcc t1 t2 s (Var v, q) = unifyStep t3 t4 s2 where
                               s2 = compose (single v q) s
                               t3 = apply (single v q) t1
                               t4 = apply (single v q) t2
+                          -- otherwise a substitution isn't possible
                           unifyStepAcc _ _ _ _ = Nothing
