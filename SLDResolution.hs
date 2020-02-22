@@ -36,7 +36,7 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
         resolutionStep (Goal []) _ _ _ = pure Nothing
         resolutionStep (Goal (t:t')) stra p (Rule t1 ts) = if (isNothing subst) then pure Nothing
             else state g where
-            g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) (t' ++ ts))) stra) vs in
+            g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) (ts ++ t'))) stra) vs in
                 (Just (fromJust subst, tree), vsAfter)
             subst = unify t t1
 {-

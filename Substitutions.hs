@@ -3,6 +3,7 @@ module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply
 import Type
 import Prettyprinting
 import Data.List
+import Data.Maybe
 import Vars
 
 
@@ -58,6 +59,14 @@ instance Substitutable Prog where
 
 instance Substitutable Goal where
   apply s (Goal ts) = Goal (fmap (apply s) ts)
+
+instance Substitutable Subst where
+  apply s (Subst ys) = Subst (catMaybes (fmap (applyToEach s) ys)) where
+    applyToEach :: Subst -> (VarName, Term) -> Maybe (VarName, Term)
+    applyToEach (Subst []) x                              = Just x
+    applyToEach (Subst ((v', Var w):xs)) (v, t) | v == v' = applyToEach (Subst xs) (w, apply (single v' (Var w)) t)
+    applyToEach (Subst ((v', t'):xs)) (v, t) | v == v'    = Nothing
+                                             | otherwise  = applyToEach (Subst xs) (v, apply (single v' t') t)
 
 instance Substitutable a => Substitutable [a] where
   apply s xs = fmap (apply s) xs

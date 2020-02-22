@@ -66,27 +66,16 @@ process file strat cmd        = do
 
 -- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
-simplify vars sub = restrictTo vars (renameSubst vars (restrictTo vars (removeId (g vars (sub, sub))))) where
-  g :: [VarName] -> (Subst, Subst) -> Subst
-  g _ (s, (Subst [])) = s
-  g vs s = g vs (f vs s)
-  f :: [VarName] -> (Subst, Subst) -> (Subst, Subst)
-  f _ (s, Subst []) = (s, Subst [])
-  f vs (s1, Subst (x:xs)) = (renameVar vs x s1, renameVar vs x (Subst xs))
+simplify vars s = s where --restrictTo vars (renameSubst vars (restrictTo vars (fst (renameVar vars (empty, s))))) where
   
-  renameVar :: [VarName] -> (VarName, Term) -> Subst -> Subst
-  renameVar _ _ (Subst []) = empty
-  renameVar vs (_, Var w) s | elem w vs = s
-  renameVar vs (v, Var w) (Subst ((x, t):xs)) = Subst ((y, apply (single w (Var v)) t):(fromSubst (renameVar vs (v, Var w) (Subst xs)))) where
-    y = if w == x then v else x
-  renameVar _ _ s = s
-  removeId :: Subst -> Subst
-  removeId (Subst []) = empty
-  removeId (Subst ((x, Var y):xs)) | x == y = removeId (Subst xs)
-  removeId (Subst (x:xs)) = Subst (x:(fromSubst (removeId (Subst xs))))
+  renameVar :: [VarName] -> (Subst, Subst) -> (Subst, Subst)
+  renameVar _ (sub, (Subst [])) = (sub, empty)
+  renameVar vs (Subst xs, Subst ((v, Var w):ys)) | elem w vs = renameVar vs (Subst (xs ++ [(v, Var w)]), Subst ys)
+                                                 | otherwise = let wv = single w (Var v) in renameVar vs (apply wv (Subst xs), apply wv (Subst ys))
+  renameVar vs (Subst xs, Subst (y:ys)) = renameVar vs (Subst (xs ++ [y]),Subst ys)
   renameSubst :: [VarName] -> Subst -> Subst
-  renameSubst vs s = compose (multiple v (fmap (\x -> Var x) subVars)) s where
-      v = filter (\x -> not (elem x vs)) (allVars s)
+  renameSubst vs sub = compose (multiple v (fmap (\x -> Var x) subVars)) sub where
+      v = filter (\x -> not (elem x vs)) (allVars sub)
       subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
 goThroughSubs :: [Subst] -> IO ()
