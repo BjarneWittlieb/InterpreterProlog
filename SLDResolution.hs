@@ -9,6 +9,7 @@ import Unification
 import Data.Maybe
 import Control.Monad.State.Lazy
 
+
 -- Data representation of an SLD Tree
 -- aka goal
 data SLDTree = Node Goal [(Subst, SLDTree)]
@@ -22,21 +23,57 @@ sld program strategy finalGoal = fst (runState (sldWithVar program noUnderscoreG
     -- main function, that does the SLD resultion, tracks all currently used variables along the way
     sldWithVar :: Prog -> Goal -> Strategy -> State [VarName] SLDTree
     sldWithVar pr goal strat = state (\vars -> let (appliedProgramm, finalVars) = runState ((rename pr) >>= (programToList goal strat)) vars in
-            ((Node goal appliedProgramm), finalVars)) where
+      ((Node goal appliedProgramm), finalVars)) where
+
          -- searches through all rules and tries to apply them to the first term
         programToList :: Goal -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
-        programToList g stra (Prog rs) = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
+        programToList (Goal []) _ _ = pure []
+        programToList (Goal ((Comb "call" toProove):ts)) stra p = (state (\ s -> (listToMaybe (solve stra p (Goal toProove)), s)) >> (programToList (Goal ts) stra p)
+        programToList (Goal (t:ts)) stra p = (resolutionOneTerm t stra p) >> (programToList (Goal ts) stra p)
+
+        resolutionOneTerm :: Term -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
+        resolutionOneTerm t stra (Prog rs) = (listState rs (resolutionStep t stra (Prog rs))) >>= (return . catMaybes)
+
+        -- This method pretty much is the same as before
+        resolutionStep :: Term -> Strategy -> Prog -> Rule -> State [VarName] (Maybe (Subst, SLDTree))
+        resolutionStep t stra p (Rule t1 ts) = if (isNothing subst) then pure Nothing
+            else state g where
+            g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) ts)) stra) vs in
+                (Just (fromJust subst, tree), vsAfter)
+            subst = unify t t1
+
+
+        -- Hallo Erik, ich habe hier ein kleine Ncahricht für dich versteckt damit du weißt was hier abgeht
+        -- Ich habe gerade nach einiger Zeit es endlich geschafft durch den ganzen Kram den du hier gemacht hast durchzublicken..
+        -- Ich muss diesen Teil wegen den Higher-order Prädikaten leider umschreiben, denn für diese muss geprüft werden,
+        --  BEVOR man das gesamte programm und dessen Regeln druchgeht ob es sich um ein Higher order prädikat handelt.
+        -- Daher funktioniert deine Lösung mit listState leider nicht mehr, da es sonst keine Möglichkeit gibt.
+        -- Kompilierst du den unten stehenden code, den ich auskommentiert habe, wirst du das Problem auch feststellen.
+{-
+        programToList :: Goal -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
+        programToList g stra (Prog rs)  = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
             st = runState (listState rs (resolutionStep g (Prog rs) stra))
         -- Takes a term to pattern match
         -- Takes a rule to apply (try pattern matching)
         -- Takes a program and a goal with which to continue further
-        resolutionStep :: Goal -> Prog -> Strategy ->  Rule -> State [VarName] (Maybe (Subst, SLDTree))
-        resolutionStep (Goal []) _ _  _ = pure Nothing
+        
+        resolutionStep :: Goal -> Prog -> Strategy -> Rule -> State [VarName] (Maybe (Subst, SLDTree))
+        resolutionStep (Goal []) _ _ _                  = pure Nothing
+
+        -- Higher order call
+        resolutionStep (Goal ((Comb "call" highers):xs)) p stra _ = if (isNothing subst) then pure Nothing else state g where
+          g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) xs)) stra) vs in
+                (Just (fromJust subst, tree), vsAfter)
+          subst = listToMaybe (solve stra p (Goal highers))      
+
+        -- Regular case
         resolutionStep (Goal (x:xs)) p stra (Rule t ts) = if (isNothing subst) then pure Nothing
             else state g where
             g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) (ts ++ xs))) stra) vs in
                 (Just (fromJust subst, tree), vsAfter)
             subst = unify x t
+-}
+
 
 type Strategy = SLDTree -> [Subst]
 
