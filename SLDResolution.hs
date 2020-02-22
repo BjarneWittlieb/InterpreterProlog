@@ -26,6 +26,8 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
       ((Node goal appliedProgramm), finalVars)) where
 
         programToList :: Goal -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
+        programToList (Goal ((Comb "call" ((Comb f xs):ys)):ts)) stra p = let s = (solve stra p (Goal [Comb f (xs ++ ys)])) in
+            pure (fmap (\sub -> (sub, sld p stra (Goal ts))) s)
         programToList g stra (Prog rs)  = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
             st = runState (listState rs (resolutionStep g stra (Prog rs)))
 
@@ -62,6 +64,14 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
         --  BEVOR man das gesamte programm und dessen Regeln druchgeht ob es sich um ein Higher order prädikat handelt.
         -- Daher funktioniert deine Lösung mit listState leider nicht mehr, da es sonst keine Möglichkeit gibt.
         -- Kompilierst du den unten stehenden code, den ich auskommentiert habe, wirst du das Problem auch feststellen.
+
+        -- Keine Ahnung, was du hier genau vorhast, aber wie das hier steht, scheint es nicht zu funktionieren.
+        -- Wenn ich (>>) richtig verstehe, gibt programToList bei dieser implementierung immer pure [] zurück.
+        -- Ich hab zunächst wieder eine Version, die zumindest für normale Prädikate funktioniert, hingeschrieben.
+        -- Übrigens hab ich die replace Methoden grundlegend verändert: sie substituieren jetzt ausschließlich Variablen
+        -- aus der [VarName] Liste, da dies deutlich effizienter ist.
+
+        -- Ok, ich glaub ich hab call jetzt implementiert, man musste doch nur bei programToList einen Spezialfall hinzufügen?
 {-
         programToList :: Goal -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
         programToList g stra (Prog rs)  = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
