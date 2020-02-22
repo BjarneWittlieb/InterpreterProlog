@@ -89,8 +89,6 @@ simplify vars sub = restrictTo vars (renameSubst vars (restrictTo vars (removeId
       v = filter (\x -> not (elem x vs)) (allVars s)
       subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
-mult(s(s(s(s(s(s(s(s(s(s(o)))))))))), s(s(s(s(s(s(s(s(s(s(o)))))))))), X).
-
 goThroughSubs :: [Subst] -> IO ()
 -- if there are no more substitutions, output 'false'
 goThroughSubs [] = do
