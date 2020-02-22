@@ -1,2 +1,4 @@
-/bin/
+/bin/*
 Main.exe
+*.o
+*.hi
