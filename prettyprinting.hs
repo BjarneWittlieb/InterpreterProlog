@@ -1,4 +1,4 @@
-module Prettyprinting where
+module Prettyprinting(Pretty, pretty) where
 
 import Data.List
 

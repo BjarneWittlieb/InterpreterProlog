@@ -1,4 +1,4 @@
-module Rename where
+module Rename(Renameable, rename, replaceList, fromGoal, fromProg, fromRule, listState) where
 
 import Data.List
 import Type

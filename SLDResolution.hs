@@ -1,4 +1,5 @@
-module SLDResolution where
+module SLDResolution(SLDTree, sld, Strategy, dfs, bfs, idfs, solve) where
+-- NOT exporting the SLDTree constructor, cause it doesnt matter
 
 import Type
 import Vars

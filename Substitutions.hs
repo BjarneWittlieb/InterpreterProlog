@@ -1,4 +1,4 @@
-module Substitutions where
+module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst) where
 
 import Type
 import Prettyprinting
@@ -76,7 +76,6 @@ restrictTo :: [VarName] -> Subst -> Subst
 restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
                              | otherwise = restrictTo vs (Subst xs) 
-
 
 fromSubst :: Subst -> [(VarName, Term)]
 fromSubst (Subst x) = x

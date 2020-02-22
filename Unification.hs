@@ -1,4 +1,4 @@
-module Unification where
+module Unification(unify) where
 
 import Data.Maybe
 

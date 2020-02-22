@@ -1,4 +1,5 @@
-module Vars where
+module Vars(freshVars, Vars, allVars) where
+-- Exporting everything except firstChars and allChars
 
 import Type
 import Data.List
