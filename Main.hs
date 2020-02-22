@@ -66,7 +66,7 @@ process file strat cmd        = do
 
 -- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
-simplify vars s = s where --restrictTo vars (renameSubst vars (restrictTo vars (fst (renameVar vars (empty, s))))) where
+simplify vars s = renameSubst vars (restrictTo vars (fst (renameVar vars (empty, s)))) where
   
   renameVar :: [VarName] -> (Subst, Subst) -> (Subst, Subst)
   renameVar _ (sub, (Subst [])) = (sub, empty)
@@ -74,7 +74,7 @@ simplify vars s = s where --restrictTo vars (renameSubst vars (restrictTo vars (
                                                  | otherwise = let wv = single w (Var v) in renameVar vs (apply wv (Subst xs), apply wv (Subst ys))
   renameVar vs (Subst xs, Subst (y:ys)) = renameVar vs (Subst (xs ++ [y]),Subst ys)
   renameSubst :: [VarName] -> Subst -> Subst
-  renameSubst vs sub = compose (multiple v (fmap (\x -> Var x) subVars)) sub where
+  renameSubst vs sub = apply (multiple v (fmap (\x -> Var x) subVars)) sub where
       v = filter (\x -> not (elem x vs)) (allVars sub)
       subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
