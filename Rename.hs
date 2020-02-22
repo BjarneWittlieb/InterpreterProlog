@@ -1,6 +1,5 @@
 module Rename where
 
-import Data.List
 import Type
 import Vars
 import Substitutions
@@ -15,7 +14,7 @@ class Renameable a where
 -- Replaces the "_" variable with other fitting variables, the variables in the specified list won't be used
 replaceUnderscore :: Term -> State [VarName] Term
 -- The actual replacing
-replaceUnderscore (Var "_") = state (\vs -> let newVar = head (filter (\x -> (not (elem x vs))) freshVars) in (Var newVar, newVar:vs))
+replaceUnderscore (Var "_") = state (\vs -> (Var (head vs), tail vs))
 -- Nothing to replace
 replaceUnderscore (Var x) = pure (Var x)
 -- Replace within list
@@ -25,19 +24,19 @@ replaceList :: [Term] -> State [VarName] [Term]
 replaceList ys = listState ys replaceUnderscore
 
 listState :: [a] -> (a -> State b c) -> (State b [c])
-listState xs st = foldr (flip (>>=)) (pure []) (fmap (\x -> (\ys -> state (\zs -> let (y, z) = runState (st x) zs in (y:ys, z)))) xs)
+listState xs st = foldl (>>=) (pure []) (fmap (\x -> (\ys -> state (\zs -> let (y, z) = runState (st x) zs in (ys ++ [y], z)))) xs)
 
 -- Renames all variables in a rule, variables from the specified list won't be used
 -- returns the changed Rule and a superset of the input list, including all variables in the changed Rule
 instance Renameable Rule where 
   rename r = state f where
-    f vnames = (apply (multiple ruleVars (fmap (\x -> (Var x)) substVars)) rule, nub(vnames ++ substVars)) where
+    f vnames = (apply (multiple ruleVars (fmap (\x -> (Var x)) (fst substVars))) rule, snd substVars) where
       -- replaces all underscore variables first
       (rule, vars) = runState (replaceUnderscoreRule r) vnames
       -- a list of all variables in the Rule
       ruleVars = allVars rule
       -- a list of all variables, that will be used in the substituted Rule
-      substVars = take (length ruleVars) (filter (\x -> not (elem x vars)) freshVars)
+      substVars = splitAt (length ruleVars) vars
       
 -- replaces all underscore variables in a Rule
 replaceUnderscoreRule :: Rule -> State [VarName] Rule

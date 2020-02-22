@@ -61,23 +61,35 @@ process file strat cmd        = do
             loop file strat
         -- if the parse was successful, solve the goal and call goThroughSubs to generate the output 
         (Right goal) -> do
-            let goalVars = allVars goal in goThroughSubs (fmap (restrictTo goalVars) (fmap (simplify goalVars) (solve strat file goal)))
+            let goalVars = allVars goal in goThroughSubs (fmap (simplify goalVars) (solve strat file goal))
             loop file strat
 
 -- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
-simplify vars s = compose (invert (fst subSplit)) (snd subSplit) where
-  subSplit = splitTrivialSubst s vars
-  splitTrivialSubst :: Subst -> [VarName] -> (Subst, Subst)
-  splitTrivialSubst (Subst []) _ = (empty, empty)
-  splitTrivialSubst (Subst ((v, Var w):xs)) vs | (not (elem w vs)) = if not (elem v vs) then splitTrivialSubst (Subst xs) vs
-                                                                     else  (Subst ((v, Var w):(fromSubst (fst rest))), (snd rest)) where
-    rest = splitTrivialSubst (compose (single w (Var v)) (Subst xs)) vs
-  splitTrivialSubst (Subst (x:xs)) vs = (\a (b, c) -> (b, Subst (a:(fromSubst c)))) x (splitTrivialSubst (Subst xs) vs)
-  -- inverts a substitutiom (if possible
-  invert :: Subst -> Subst
-  invert (Subst ((v, Var w):xs)) = Subst ((w, Var v):(fromSubst (invert (Subst xs))))
-  invert _ = empty
+simplify vars sub = restrictTo vars (renameSubst vars (restrictTo vars (removeId (g vars (sub, sub))))) where
+  g :: [VarName] -> (Subst, Subst) -> Subst
+  g _ (s, (Subst [])) = s
+  g vs s = g vs (f vs s)
+  f :: [VarName] -> (Subst, Subst) -> (Subst, Subst)
+  f _ (s, Subst []) = (s, Subst [])
+  f vs (s1, Subst (x:xs)) = (renameVar vs x s1, renameVar vs x (Subst xs))
+  
+  renameVar :: [VarName] -> (VarName, Term) -> Subst -> Subst
+  renameVar _ _ (Subst []) = empty
+  renameVar vs (_, Var w) s | elem w vs = s
+  renameVar vs (v, Var w) (Subst ((x, t):xs)) = Subst ((y, apply (single w (Var v)) t):(fromSubst (renameVar vs (v, Var w) (Subst xs)))) where
+    y = if w == x then v else x
+  renameVar _ _ s = s
+  removeId :: Subst -> Subst
+  removeId (Subst []) = empty
+  removeId (Subst ((x, Var y):xs)) | x == y = removeId (Subst xs)
+  removeId (Subst (x:xs)) = Subst (x:(fromSubst (removeId (Subst xs))))
+  renameSubst :: [VarName] -> Subst -> Subst
+  renameSubst vs s = compose (multiple v (fmap (\x -> Var x) subVars)) s where
+      v = filter (\x -> not (elem x vs)) (allVars s)
+      subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
+
+mult(s(s(s(s(s(s(s(s(s(s(o)))))))))), s(s(s(s(s(s(s(s(s(s(o)))))))))), X).
 
 goThroughSubs :: [Subst] -> IO ()
 -- if there are no more substitutions, output 'false'

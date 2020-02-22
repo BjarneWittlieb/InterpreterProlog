@@ -15,9 +15,9 @@ data SLDTree = Node Goal [(Subst, SLDTree)]
 
 -- creates a SLD tree out of a program and a goal
 sld :: Prog -> Goal -> SLDTree
-sld program finalGoal = fst (runState (sldWithVar program noUnderscoreGoal) variables) where
-    variables = (allVars program) ++ (allVars noUnderscoreGoal)
-    noUnderscoreGoal = Goal (fst (runState (replaceList (fromGoal finalGoal)) (allVars finalGoal)))
+sld program finalGoal = fst (runState (sldWithVar program (Goal (fst noUnderscoreGoal))) variables) where
+    variables = filter (\x -> not (elem x (allVars program))) (snd noUnderscoreGoal)
+    noUnderscoreGoal = (runState (replaceList (fromGoal finalGoal)) (filter (\x -> not (elem x (allVars finalGoal))) freshVars))
     -- main function, that does the SLD resultion, tracks all currently used variables along the way
     sldWithVar :: Prog -> Goal -> State [VarName] SLDTree
     sldWithVar pr goal = state (\vars -> let (appliedProgramm, finalVars) = runState ((rename pr) >>= (programToList goal)) vars in

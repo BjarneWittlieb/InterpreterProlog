@@ -14,7 +14,7 @@ instance Vars Term where
     allVars (Comb _ xs) = nub (concat (fmap allVars xs))
 
 instance Vars Rule where
-    allVars (Rule t ts) = nub ((allVars t) ++ foldr (++) [] (fmap allVars ts))
+    allVars (Rule t ts) = nub ((allVars t) ++ concat (fmap allVars ts))
 
 instance Vars Prog where
     allVars (Prog rs) = nub (concat (fmap allVars rs))

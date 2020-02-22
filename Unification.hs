@@ -22,15 +22,7 @@ ds (Comb f xs) (Comb g ys) | f /= g                     = Just ((Comb f xs), (Co
 
 -- The unification algorithm
 unify :: Term -> Term -> Maybe Subst
--- When either the symbols are not equal or the predicates take a different
--- amount of arguments unification is not possible
-unify term1 term2 = unifyStep term1 term2 empty where
-    unifyStep :: Term -> Term -> Subst -> Maybe Subst
-    unifyStep (Comb f xs) (Comb g ys) _ | f /= g                     = Nothing
-                                        | (length xs) /= (length ys) = Nothing 
-    -- When ds is empty then we are finished
-    -- add case for more efficiency      VVV
-    unifyStep t1 t2 subst = case (ds t1 t2) of
-                               Nothing -> Just subst
-                               Just (Var v, q) -> let sub = single v q in unifyStep (apply sub t1) (apply sub t2) (compose sub subst)
-                               Just _ -> Nothing
+unify t1 t2 = case (ds t1 t2) of
+    Nothing -> Just empty
+    Just (Var v, q) -> let sub = single v q in fmap (compose sub) (unify (apply sub t1) (apply sub t2))
+    Just _ -> Nothing
