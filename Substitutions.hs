@@ -14,7 +14,7 @@ instance Pretty Subst where
   pretty (Subst xs) = "{" ++ (intercalate ", " (fmap (\(x, y) -> x ++ " -> " ++ (pretty y)) xs)) ++ "}"
 
 instance Vars Subst where
-  allVars (Subst xs) = killDuplicates (foldr (++) [] (fmap (\(x, y) -> x:allVars(y)) xs))
+  allVars (Subst xs) = nub (foldr (++) [] (fmap (\(x, y) -> x:allVars(y)) xs))
 
 
 -- Kann raus, übers Ziel hinaus
@@ -38,9 +38,7 @@ single :: VarName -> Term -> Subst
 single v t = Subst [(v, t)]
 
 multiple :: [VarName] -> [Term] -> Subst
-multiple [] _ = empty
-multiple _ [] = empty
-multiple (v:vs) (t:ts) = compose (single v t) (multiple vs ts)
+multiple vs ts = foldr (\(x, y) -> compose (single x y)) empty (zip vs ts)
 
 -- Applies A Substitution
 class Substitutable a where 
@@ -78,20 +76,6 @@ restrictTo :: [VarName] -> Subst -> Subst
 restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
                              | otherwise = restrictTo vs (Subst xs) 
-
--- simplifies a substitution to generate a better output
-simplify :: [VarName] -> Subst -> Subst
-simplify vars s = compose (invert (fst subSplit)) (snd subSplit) where
-  subSplit = splitTrivialSubst s vars
-  splitTrivialSubst :: Subst -> [VarName] -> (Subst, Subst)
-  splitTrivialSubst (Subst []) _ = (empty, empty)
-  splitTrivialSubst (Subst ((v, Var w):xs)) vs | (not (elem w vs)) = (Subst ((v, Var w):(fromSubst (fst rest))), (snd rest)) where
-    rest = splitTrivialSubst (compose (single w (Var v)) (Subst xs)) vs
-  splitTrivialSubst (Subst (x:xs)) vs = (\a (b, c) -> (b, Subst (a:(fromSubst c)))) x (splitTrivialSubst (Subst xs) vs)
-  -- inverts a substitutiom (if possible
-  invert :: Subst -> Subst
-  invert (Subst ((v, Var w):xs)) = Subst ((w, Var v):(fromSubst (invert (Subst xs))))
-  invert _ = empty
 
 
 fromSubst :: Subst -> [(VarName, Term)]

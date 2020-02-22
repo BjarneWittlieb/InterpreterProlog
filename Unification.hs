@@ -17,14 +17,7 @@ ds t (Var x) = Just ((Var x), t)
 -- two share the ds of their inner parts when they are not equal or have not equal length
 ds (Comb f xs) (Comb g ys) | f /= g                     = Just ((Comb f xs), (Comb g ys))
                            | (length xs) /= (length ys) = Just ((Comb f xs), (Comb g ys))
-                           | otherwise                  = listToMaybe (catMaybes (fmap (uncurry ds) xys)) where
-                               xys = throwTogether xs ys
-                               -- aka zip
-                               -- throwTogether assumes that the terms have equal length
-                               throwTogether :: [a] -> [b] -> [(a, b)]
-                               throwTogether [] []           = []
-                               throwTogether (x:xs1) (y:ys1) = (x, y):(throwTogether xs1 ys1)
-                               throwTogether _ _             = []
+                           | otherwise                  = listToMaybe (catMaybes (fmap (uncurry ds) (zip xs ys)))
 
 
 -- The unification algorithm
@@ -37,15 +30,7 @@ unify term1 term2 = unifyStep term1 term2 empty where
                                         | (length xs) /= (length ys) = Nothing 
     -- When ds is empty then we are finished
     -- add case for more efficiency      VVV
-    unifyStep u1 u2 subst | isNothing (ds u1 u2) = Just subst
-    -- When ds is not empty the Subst is changed to the newer version
-                      | otherwise            = unifyStepAcc u1 u2 subst x where
-                          x = (fromJust (ds u1 u2))
-                          unifyStepAcc :: Term -> Term -> Subst -> (Term, Term) -> Maybe Subst
-                          -- if the ds has a variable in its first argument, the substitution is possible
-                          unifyStepAcc t1 t2 s (Var v, q) = unifyStep t3 t4 s2 where
-                              s2 = compose (single v q) s
-                              t3 = apply (single v q) t1
-                              t4 = apply (single v q) t2
-                          -- otherwise a substitution isn't possible
-                          unifyStepAcc _ _ _ _ = Nothing
+    unifyStep t1 t2 subst = case (ds t1 t2) of
+                               Nothing -> Just subst
+                               Just (Var v, q) -> let sub = single v q in unifyStep (apply sub t1) (apply sub t2) (compose sub subst)
+                               Just _ -> Nothing

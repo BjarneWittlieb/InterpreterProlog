@@ -7,7 +7,6 @@ import Parser
 import Substitutions
 import Prettyprinting
 import Vars
-
 import System.IO
 
 
@@ -64,6 +63,21 @@ process file strat cmd        = do
         (Right goal) -> do
             let goalVars = allVars goal in goThroughSubs (fmap (restrictTo goalVars) (fmap (simplify goalVars) (solve strat file goal)))
             loop file strat
+
+-- simplifies a substitution to generate a better output
+simplify :: [VarName] -> Subst -> Subst
+simplify vars s = compose (invert (fst subSplit)) (snd subSplit) where
+  subSplit = splitTrivialSubst s vars
+  splitTrivialSubst :: Subst -> [VarName] -> (Subst, Subst)
+  splitTrivialSubst (Subst []) _ = (empty, empty)
+  splitTrivialSubst (Subst ((v, Var w):xs)) vs | (not (elem w vs)) = if not (elem v vs) then splitTrivialSubst (Subst xs) vs
+                                                                     else  (Subst ((v, Var w):(fromSubst (fst rest))), (snd rest)) where
+    rest = splitTrivialSubst (compose (single w (Var v)) (Subst xs)) vs
+  splitTrivialSubst (Subst (x:xs)) vs = (\a (b, c) -> (b, Subst (a:(fromSubst c)))) x (splitTrivialSubst (Subst xs) vs)
+  -- inverts a substitutiom (if possible
+  invert :: Subst -> Subst
+  invert (Subst ((v, Var w):xs)) = Subst ((w, Var v):(fromSubst (invert (Subst xs))))
+  invert _ = empty
 
 goThroughSubs :: [Subst] -> IO ()
 -- if there are no more substitutions, output 'false'

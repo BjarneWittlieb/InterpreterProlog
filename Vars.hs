@@ -1,6 +1,7 @@
 module Vars where
 
 import Type
+import Data.List
 
 -- allVars is a function that will return all contained Variables within a certain type
 -- The implementation should eliminate duplicates
@@ -10,25 +11,20 @@ class Vars a where
 -- Concatmap
 instance Vars Term where
     allVars (Var x) = [x]
-    allVars (Comb _ xs) = killDuplicates (foldr (++) [] (fmap allVars xs))
+    allVars (Comb _ xs) = nub (concat (fmap allVars xs))
 
 instance Vars Rule where
-    allVars (Rule t ts) = killDuplicates ((allVars t) ++ foldr (++) [] (fmap allVars ts))
+    allVars (Rule t ts) = nub ((allVars t) ++ foldr (++) [] (fmap allVars ts))
 
 instance Vars Prog where
-    allVars (Prog rs) = killDuplicates (foldr (++) [] (fmap allVars rs))
+    allVars (Prog rs) = nub (concat (fmap allVars rs))
 
 instance Vars Goal where
-    allVars (Goal ts) = killDuplicates (foldr (++) [] (fmap allVars ts))
-
--- Helper Function for eliminating duplicates within a list
-killDuplicates :: (Eq a) => [a] -> [a]
-killDuplicates []       = []
-killDuplicates (x:xs)   = [x] ++ (filter (/= x) (killDuplicates xs))
+    allVars (Goal ts) = nub (concat (fmap allVars ts))
 
 -- Possible chars for Variables
 firstChars :: String
-firstChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+firstChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 allChars :: String
 allChars = firstChars ++ "abcdefghijklmnopqrstuvwxyz"
 

@@ -37,10 +37,6 @@ sld program finalGoal = fst (runState (sldWithVar program noUnderscoreGoal) vari
                 (Just (fromJust subst, tree), vsAfter)
             subst = unify x t
 
--- State b c = state b -> (c, b)
--- listState :: [a] -> (a -> State b c) -> (State b [c])
--- a = Term, b = ([VarName], (Goal, Goal))
-
 type Strategy = SLDTree -> [Subst]
 
 -- depth-first search
