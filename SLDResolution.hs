@@ -28,6 +28,9 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
         programToList :: Goal -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
         programToList (Goal ((Comb "call" ((Comb f xs):ys)):ts)) stra p = let s = (solve stra p (Goal [Comb f (xs ++ ys)])) in
             pure (fmap (\sub -> (sub, sld p stra (Goal ts))) s)
+        programToList (Goal ((Comb "\\+" [x]):ts)) stra p = case solve stra p (Goal [Comb "call" [x]]) of
+                                                             [] -> pure [(empty, sld p stra (Goal ts))]
+                                                             _ -> pure []
         programToList g stra (Prog rs)  = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
             st = runState (listState rs (resolutionStep g stra (Prog rs)))
 
