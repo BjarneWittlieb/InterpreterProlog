@@ -1,4 +1,4 @@
-module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty) where
+module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty, repeatSubst) where
 
 import Type
 import Prettyprinting
@@ -63,6 +63,14 @@ restrictTo :: [VarName] -> Subst -> Subst
 restrictTo _ (Subst []) = empty
 restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs (Subst xs) in Subst (x:ys)
                              | otherwise = restrictTo vs (Subst xs) 
+
+repeatSubst :: Subst -> Subst
+repeatSubst s = repeatSubstAcc s s where
+  repeatSubstAcc :: Subst -> Subst -> Subst
+  repeatSubstAcc s1 s2 | disjunct s1 s2 = s2
+                         | otherwise = repeatSubstAcc s1 (compose s1 s2)
+  disjunct :: Subst -> Subst -> Bool
+  disjunct (Subst xs) (Subst ys) = (filter ((flip elem) (concat (fmap (\(x, y) -> allVars y) ys))) (fmap fst xs)) == []
 
 fromSubst :: Subst -> [(VarName, Term)]
 fromSubst (Subst x) = x

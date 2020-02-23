@@ -1,4 +1,4 @@
-module SLDResolution(Strategy, dfs, bfs, idfs, solve) where
+module SLDResolution(Strategy, dfs, bfs, idfs, solve, simplify) where
 -- NOT exporting the SLDTree constructor, cause it doesnt matter
 
 import Type
@@ -109,12 +109,8 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
 
 -- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
-simplify vars (Subst s) = let s' = (let (s1, s2) = (splitList (\(x, _) -> elem x vars) s) in applySub (Subst s2) (Subst s1)) in
-  renameSubst vars (fst (runState (repeatState (length s) (f vars) s') s')) where
-  splitList :: (a -> Bool) -> [a] -> ([a], [a])
-  splitList _ [] = ([], [])
-  splitList f (x:xs) | f x       = let (a, b) = splitList f xs in (x:a, b)
-                     | otherwise = let (a, b) = splitList f xs in (a, x:b)
+simplify vars s = let Subst s' = restrictTo vars (repeatSubst s) in
+  renameSubst vars (fst (runState (repeatState (length s') (f vars) (Subst s')) (Subst s'))) where
   f :: [VarName] -> Subst -> State Subst Subst
   f vs sub = state g where
     g (Subst []) = (sub, empty)

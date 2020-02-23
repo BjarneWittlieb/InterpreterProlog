@@ -7,10 +7,8 @@ import Parser
 import Substitutions
 import Prettyprinting
 import Unification
-import Rename
 import Vars
 import System.IO
-import Control.Monad.State.Lazy
 
 
 -- Welcomes the User and loops
@@ -66,25 +64,6 @@ process file strat cmd        = do
         (Right goal) -> do
             let goalVars = allVars goal in goThroughSubs (fmap (simplify goalVars) (solve strat file goal))
             loop file strat
-
--- simplifies a substitution to generate a better output
-simplify :: [VarName] -> Subst -> Subst
-simplify vars (Subst s) = let s' = (let (s1, s2) = (splitList (\(x, _) -> elem x vars) s) in applySub (Subst s2) (Subst s1)) in
-  renameSubst vars (fst (runState (repeatState (length s) (f vars) s') s')) where
-  splitList :: (a -> Bool) -> [a] -> ([a], [a])
-  splitList _ [] = ([], [])
-  splitList f (x:xs) | f x       = let (a, b) = splitList f xs in (x:a, b)
-                     | otherwise = let (a, b) = splitList f xs in (a, x:b)
-  f :: [VarName] -> Subst -> State Subst Subst
-  f vs sub = state g where
-    g (Subst []) = (sub, empty)
-    g (Subst ((v, Var w):xs)) | not (elem w vs) = (applySub (single w (Var v)) sub, applySub (single w (Var v)) (Subst xs))
-    g (Subst (x:xs)) = (sub, Subst xs)
-  
-  renameSubst :: [VarName] -> Subst -> Subst
-  renameSubst vs sub = applySub (multiple v (fmap (\x -> Var x) subVars)) sub where
-      v = filter (\x -> not (elem x vs)) (allVars sub)
-      subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
 goThroughSubs :: [Subst] -> IO ()
 -- if there are no more substitutions, output 'false'
