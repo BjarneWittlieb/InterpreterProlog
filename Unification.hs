@@ -1,4 +1,4 @@
-module Unification(unify) where
+module Unification(unify, applySub) where
 
 import Data.Maybe
 
@@ -26,3 +26,6 @@ unify t1 t2 = case (ds t1 t2) of
     Nothing -> Just empty
     Just (Var v, q) -> let sub = single v q in fmap (compose sub) (unify (apply sub t1) (apply sub t2))
     Just _ -> Nothing
+
+applySub :: Subst -> Subst -> Subst
+applySub s (Subst ys) = foldr compose empty (catMaybes (fmap (\(v, t) -> (uncurry unify) (apply s (Var v), apply s t)) ys))

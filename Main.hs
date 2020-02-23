@@ -6,6 +6,7 @@ import SLDResolution
 import Parser
 import Substitutions
 import Prettyprinting
+import Unification
 import Vars
 import System.IO
 
@@ -71,10 +72,11 @@ simplify vars s = renameSubst vars (restrictTo vars (fst (renameVar vars (empty,
   renameVar :: [VarName] -> (Subst, Subst) -> (Subst, Subst)
   renameVar _ (sub, (Subst [])) = (sub, empty)
   renameVar vs (Subst xs, Subst ((v, Var w):ys)) | elem w vs = renameVar vs (Subst (xs ++ [(v, Var w)]), Subst ys)
-                                                 | otherwise = let wv = single w (Var v) in renameVar vs (apply wv (Subst xs), apply wv (Subst ys))
+                                                 | otherwise = let wv = single w (Var v) 
+                                                               in renameVar vs (applySub wv (Subst xs), applySub wv (Subst ys))
   renameVar vs (Subst xs, Subst (y:ys)) = renameVar vs (Subst (xs ++ [y]),Subst ys)
   renameSubst :: [VarName] -> Subst -> Subst
-  renameSubst vs sub = apply (multiple v (fmap (\x -> Var x) subVars)) sub where
+  renameSubst vs sub = applySub (multiple v (fmap (\x -> Var x) subVars)) sub where
       v = filter (\x -> not (elem x vs)) (allVars sub)
       subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
@@ -87,12 +89,12 @@ goThroughSubs [] = do
 -- if the substitution is empty, output 'true' and return
 -- otherwise output the substitution and wait for user input
 goThroughSubs (x:xs) =
-    if (== empty) x then do putStrLn "true."
-                            return ()
-                    else do putStr (pretty x)
-                            hFlush stdout
-                            c <- getLine
-                            parseLine c xs
+    if isEmpty x then do putStrLn "true."
+                         return ()
+                 else do putStr (pretty x)
+                         hFlush stdout
+                         c <- getLine
+                         parseLine c xs
 
 -- parses user input while being in the process of outputting the substititutions
 parseLine :: String -> [Subst] -> IO ()
@@ -107,10 +109,10 @@ parseLine (';':_) [] = do
 parseLine ";" s = goThroughSubs s
 -- output the next substitution, if the input is a ','
 parseLine (';':xs) (s:ss) =
-    if (== empty) s then do putStrLn "true."
-                            return ()
-                    else do putStrLn (pretty s)
-                            parseLine xs ss
+    if isEmpty s then do putStrLn "true."
+                         return ()
+                 else do putStrLn (pretty s)
+                         parseLine xs ss
 -- otherwise print an error message and return
 parseLine _ _ = do
     putStrLn "Expected either '.' or ';'!"

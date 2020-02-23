@@ -1,9 +1,8 @@
-module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst) where
+module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty) where
 
 import Type
 import Prettyprinting
 import Data.List
-import Data.Maybe
 import Vars
 
 
@@ -17,19 +16,6 @@ instance Pretty Subst where
 instance Vars Subst where
   allVars (Subst xs) = nub (concat (fmap (\(x, y) -> x:allVars(y)) xs))
 
-
--- Kann raus, übers Ziel hinaus
-instance Eq Subst where
-  (Subst xs) == (Subst ys) = foldr (&&) True ((fmap (inSubst xs) ys) ++ (fmap (inSubst ys) xs)) where
-    inSubst :: [(VarName, Term)] -> (VarName, Term) -> Bool
-    inSubst [] _ = False
-    inSubst ((v', t'):zs) (v, t) = ((v == v') && (termEq t t')) || (inSubst zs (v, t))
-
--- checks, if two terms are equal
-termEq :: Term -> Term -> Bool
-termEq (Var x) (Var y) = x == y
-termEq (Comb f xs) (Comb g ys) = f == g && (foldr (&&) True (fmap (uncurry termEq) (zip xs ys)))
-termEq _ _ = False
 
 -- Special Substitutions
 empty :: Subst
@@ -60,14 +46,6 @@ instance Substitutable Prog where
 instance Substitutable Goal where
   apply s (Goal ts) = Goal (fmap (apply s) ts)
 
-instance Substitutable Subst where
-  apply s (Subst ys) = Subst (catMaybes (fmap (applyToEach s) ys)) where
-    applyToEach :: Subst -> (VarName, Term) -> Maybe (VarName, Term)
-    applyToEach (Subst []) x                              = Just x
-    applyToEach (Subst ((v', Var w):xs)) (v, t) | v == v' = applyToEach (Subst xs) (w, apply (single v' (Var w)) t)
-    applyToEach (Subst ((v', t'):xs)) (v, t) | v == v'    = Nothing
-                                             | otherwise  = applyToEach (Subst xs) (v, apply (single v' t') t)
-
 instance Substitutable a => Substitutable [a] where
   apply s xs = fmap (apply s) xs
 
@@ -88,3 +66,7 @@ restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs 
 
 fromSubst :: Subst -> [(VarName, Term)]
 fromSubst (Subst x) = x
+
+isEmpty :: Subst -> Bool
+isEmpty (Subst []) = True
+isEmpty _ = False
