@@ -1,4 +1,4 @@
-module Rename(Renameable, rename, replaceList, fromGoal, fromProg, fromRule, listState) where
+module Rename(Renameable, rename, replaceList, fromGoal, fromProg, fromRule, listState, repeatState) where
 
 import Type
 import Vars
@@ -25,6 +25,9 @@ replaceList ys = listState ys replaceUnderscore
 
 listState :: [a] -> (a -> State b c) -> (State b [c])
 listState xs st = foldl (>>=) (pure []) (fmap (\x -> (\ys -> state (\zs -> let (y, z) = runState (st x) zs in (ys ++ [y], z)))) xs)
+
+repeatState :: Int -> (b -> State a b) -> b -> State a b
+repeatState i f x = foldl (>>=) (pure x) (take i (repeat f))
 
 -- Renames all variables in a rule, variables from the specified list won't be used
 -- returns the changed Rule and a superset of the input list, including all variables in the changed Rule

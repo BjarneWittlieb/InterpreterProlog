@@ -31,9 +31,15 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
         programToList (Goal ((Comb "\\+" [x]):ts)) stra p = case solve stra p (Goal [Comb "call" [x]]) of
                                                              [] -> pure [(empty, sld p stra (Goal ts))]
                                                              _ -> pure []
+        programToList (Goal ((Comb "findall" [x, y, z]):ts)) stra p = 
+          case unify z (listToTerm (fmap (((flip apply) x).(simplify (allVars (Goal [x, y, z])))) (solve stra p (Goal [Comb "call" [y]])))) of
+            Nothing -> pure []
+            Just s -> pure [(s, sld p stra (apply s (Goal ts)))]             
         programToList g stra (Prog rs)  = state (\s -> (catMaybes (fst (st s)), snd (st s))) where
             st = runState (listState rs (resolutionStep g stra (Prog rs)))
-
+        listToTerm :: [Term] -> Term
+        listToTerm [] = Comb "[]" []
+        listToTerm (t:ts) = Comb "." [t, listToTerm ts]
         -- This method pretty much is the same as before
         resolutionStep :: Goal -> Strategy -> Prog -> Rule -> State [VarName] (Maybe (Subst, SLDTree))
         resolutionStep (Goal []) _ _ _ = pure Nothing
@@ -42,6 +48,7 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
             g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) (ts ++ t'))) stra) vs in
                 (Just (fromJust subst, tree), vsAfter)
             subst = unify t t1
+        
 {-
          -- searches through all rules and tries to apply them to the first term
         programToList :: Goal -> Strategy -> Prog -> State [VarName] [(Subst, SLDTree)]
@@ -99,6 +106,24 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
                 (Just (fromJust subst, tree), vsAfter)
             subst = unify x t
 -}
+
+-- simplifies a substitution to generate a better output
+simplify :: [VarName] -> Subst -> Subst
+simplify vars (Subst s) = let s' = (let (s1, s2) = (splitList (\(x, _) -> elem x vars) s) in applySub (Subst s2) (Subst s1)) in
+  renameSubst vars (fst (runState (repeatState (length s) (f vars) s') s')) where
+  splitList :: (a -> Bool) -> [a] -> ([a], [a])
+  splitList _ [] = ([], [])
+  splitList f (x:xs) | f x       = let (a, b) = splitList f xs in (x:a, b)
+                     | otherwise = let (a, b) = splitList f xs in (a, x:b)
+  f :: [VarName] -> Subst -> State Subst Subst
+  f vs sub = state g where
+    g (Subst []) = (sub, empty)
+    g (Subst ((v, Var w):xs)) | not (elem w vs) = (applySub (single w (Var v)) sub, applySub (single w (Var v)) (Subst xs))
+    g (Subst (x:xs)) = (sub, Subst xs)
+  renameSubst :: [VarName] -> Subst -> Subst
+  renameSubst vs sub = applySub (multiple v (fmap (\x -> Var x) subVars)) sub where
+      v = filter (\x -> not (elem x vs)) (allVars sub)
+      subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
 
 type Strategy = SLDTree -> [Subst]
