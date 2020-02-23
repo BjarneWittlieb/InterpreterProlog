@@ -35,7 +35,7 @@ instance Renameable Rule where
   rename r = state f where
     f vnames = (apply (multiple ruleVars (fmap (\x -> (Var x)) (fst substVars))) rule, snd substVars) where
       -- replaces all underscore variables first
-      (rule, vars) = runState (replaceUnderscoreRule r) vnames
+      (rule, vars) = runState (replaceUnderscoreRule r) (filter (\x -> not (elem x (allVars r))) vnames)
       -- a list of all variables in the Rule
       ruleVars = allVars rule
       -- a list of all variables, that will be used in the substituted Rule

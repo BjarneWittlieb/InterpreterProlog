@@ -70,7 +70,7 @@ repeatSubst s = repeatSubstAcc s s where
   repeatSubstAcc s1 s2 | disjunct s1 s2 = s2
                          | otherwise = repeatSubstAcc s1 (compose s1 s2)
   disjunct :: Subst -> Subst -> Bool
-  disjunct (Subst xs) (Subst ys) = (filter ((flip elem) (concat (fmap (\(x, y) -> allVars y) ys))) (fmap fst xs)) == []
+  disjunct (Subst xs) (Subst ys) = (filter ((flip elem) (concat (fmap (\(_, y) -> allVars y) ys))) (fmap fst xs)) == []
 
 fromSubst :: Subst -> [(VarName, Term)]
 fromSubst (Subst x) = x

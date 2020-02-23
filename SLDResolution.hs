@@ -11,14 +11,43 @@ import Control.Monad.State.Lazy
 
 
 -- Data representation of an SLD Tree
--- aka goal
 data SLDTree = Node Goal [(Subst, SLDTree)]
   deriving Show
 
 -- creates a SLD tree out of a program and a goal
+sld :: Strategy -> Prog -> Goal -> SLDTree
+sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars finalGoal))) freshVars) strategy program noUnderscoreGoal where
+    noUnderscoreGoal = Goal (fst (runState (replaceList (fromGoal finalGoal)) (filter (\x -> not (elem x (allVars finalGoal))) freshVars)))
+    -- main function, that does the SLD resultion
+    resolution :: [VarName] -> Strategy -> Prog -> Goal -> SLDTree
+    resolution vars strat pr goal = Node goal (applyRules (snd renamedProgram) strat (fst renamedProgram) goal) where
+        renamedProgram = (runState (rename pr) vars)
+        applyRules :: [VarName] -> Strategy -> Prog -> Goal -> [(Subst, SLDTree)]           
+        applyRules vs stra p (Goal ((Comb "call" ((Comb f xs):ys)):ts)) = let s = (solve stra p (Goal [Comb f (xs ++ ys)])) in
+            (fmap (\sub -> (sub, resolution vs stra p (Goal ts))) s)
+        applyRules vs stra p (Goal ((Comb "\\+" [x]):ts)) = case solve stra p (Goal [Comb "call" [x]]) of
+                                                              [] -> [(empty, resolution vs stra p (Goal ts))]
+                                                              _ -> []
+        applyRules vs stra p (Goal ((Comb "findall" [x, y, z]):ts)) = 
+          case unify z (listToTerm (fmap (((flip apply) x).(simplify (allVars (Goal [x, y, z])))) (solve stra p (Goal [Comb "call" [y]])))) of
+            Nothing -> []
+            Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]        
+        applyRules vs stra (Prog rs) g = catMaybes (fmap (resolutionStep vs stra (Prog rs) g) rs) 
+        listToTerm :: [Term] -> Term
+        listToTerm [] = Comb "[]" []
+        listToTerm (t:ts) = Comb "." [t, listToTerm ts]
+        -- This method pretty much is the same as before
+        resolutionStep :: [VarName] -> Strategy -> Prog -> Goal -> Rule -> Maybe (Subst, SLDTree)
+        resolutionStep _ _ _ (Goal []) _ = Nothing
+        resolutionStep vs stra p (Goal (t:t')) (Rule t1 ts) = let subst = unify t t1 in 
+            if (isNothing subst) then Nothing
+                                 else Just (fromJust subst, resolution vs stra p (Goal (apply (fromJust subst) (ts ++ t'))))
+            
+
+{--- creates a SLD tree out of a program and a goal
 sld :: Prog -> Strategy -> Goal -> SLDTree
 sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst noUnderscoreGoal)) strategy) variables) where
-    variables = filter (\x -> not (elem x (allVars program))) (snd noUnderscoreGoal)
+    variables = {-filter (\x -> not (elem x (allVars program)))-} (snd noUnderscoreGoal)
     noUnderscoreGoal = (runState (replaceList (fromGoal finalGoal)) (filter (\x -> not (elem x (allVars finalGoal))) freshVars))
     -- main function, that does the SLD resultion, tracks all currently used variables along the way
     sldWithVar :: Prog -> Goal -> Strategy -> State [VarName] SLDTree
@@ -47,7 +76,7 @@ sld program strategy finalGoal = fst (runState (sldWithVar program (Goal (fst no
             else state g where
             g vs = let (tree, vsAfter) = runState (sldWithVar p (Goal (apply (fromJust subst) (ts ++ t'))) stra) vs in
                 (Just (fromJust subst, tree), vsAfter)
-            subst = unify t t1
+            subst = unify t t1-}
         
 {-
          -- searches through all rules and tries to apply them to the first term
@@ -115,7 +144,7 @@ simplify vars s = let Subst s' = restrictTo vars (repeatSubst s) in
   f vs sub = state g where
     g (Subst []) = (sub, empty)
     g (Subst ((v, Var w):xs)) | not (elem w vs) = (applySub (single w (Var v)) sub, applySub (single w (Var v)) (Subst xs))
-    g (Subst (x:xs)) = (sub, Subst xs)
+    g (Subst (_:xs)) = (sub, Subst xs)
   renameSubst :: [VarName] -> Subst -> Subst
   renameSubst vs sub = applySub (multiple v (fmap (\x -> Var x) subVars)) sub where
       v = filter (\x -> not (elem x vs)) (allVars sub)
@@ -164,4 +193,4 @@ idfs tree1 = idfsAcc 0 tree1 where
 
 -- solves a goal with a strategie using all rules from a program
 solve :: Strategy -> Prog -> Goal -> [Subst]
-solve s p g = s (sld p s g) 
+solve s p g = s (sld s p g) 
