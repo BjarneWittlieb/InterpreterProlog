@@ -28,6 +28,3 @@ append([E|R],L,[E|RL]) :- append(R,L,RL).
 equal(X, X).
 equal3(X, X, X).
 equal4(X, X, X, X).
-
-f(a(a(a(X)))).
-f(a(X)) :- f(X).
