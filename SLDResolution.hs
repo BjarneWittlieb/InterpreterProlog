@@ -41,33 +41,13 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
             Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]  
         -- The evalutaion of terms 'is'
         applyRules vs stra p (Goal ((Comb "is" [x, y]):ts)) =
-          case ((eval x) >>= (\s -> pure (Comb (show s) []))) >>= (unify y) of
+          case ((eval y) >>= (\s -> pure (Comb (show s) []))) >>= (unify x) of
             Nothing -> []
             Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]
         -- Boolean eval predicates
-        applyRules vs stra p (Goal ((Comb "=.=" [x, y]):ts)) =
-          case pure (==) <*> (eval x) <*> (eval y) of
-            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
-            _ -> []
-        applyRules vs stra p (Goal ((Comb "=\\=" [x, y]):ts)) =
-          case pure (/=) <*> (eval x) <*> (eval y) of
-            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
-            _ -> []
-        applyRules vs stra p (Goal ((Comb "<" [x, y]):ts)) =
-          case pure (<) <*> (eval x) <*> (eval y) of
-            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
-            _ -> []
-        applyRules vs stra p (Goal ((Comb ">" [x, y]):ts)) =
-          case pure (>) <*> (eval x) <*> (eval y) of
-            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
-            _ -> []
-        applyRules vs stra p (Goal ((Comb "=<" [x, y]):ts)) =
-          case pure (<=) <*> (eval x) <*> (eval y) of
-            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
-            _ -> []
-        applyRules vs stra p (Goal ((Comb ">=" [x, y]):ts)) =
-          case pure (>=) <*> (eval x) <*> (eval y) of
-            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+        applyRules vs stra p (Goal ((Comb c [x, y]):ts)) | fst (isComparison c) = 
+          case pure (snd (isComparison c)) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (Goal ts))]
             _ -> []
         applyRules vs stra (Prog rs) g = catMaybes (fmap (resolutionStep vs stra (Prog rs) g) rs) 
 
@@ -92,6 +72,15 @@ eval (Comb "div" [x, y]) = pure (div) <*> (eval x) <*> (eval y)
 eval (Comb "mod" [x, y]) = pure (mod) <*> (eval x) <*> (eval y)
 eval (Comb num []) = (readMaybe num) :: Maybe Int
 eval _ = Nothing
+
+isComparison :: String -> (Bool, Int -> Int -> Bool)
+isComparison "=:=" = (True, (==)) 
+isComparison "=\\=" = (True, (/=))
+isComparison "<" = (True, (<))
+isComparison ">" = (True, (>))
+isComparison ">=" = (True, (>=))
+isComparison "=<" = (True, (<=))
+isComparison _ = (False, (\_ _ -> False))
 
 {--- creates a SLD tree out of a program and a goal
 sld :: Prog -> Strategy -> Goal -> SLDTree

@@ -6,7 +6,6 @@ import SLDResolution
 import Parser
 import Substitutions
 import Prettyprinting
-import Vars
 import System.IO
 
 
