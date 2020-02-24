@@ -9,6 +9,8 @@ Compile with
 ghc -Wall Main.hs -odir bin -hidir bin
 ```
 
+Make sure to have a bin folder in the main directory if you want to locate all compiled files there.
+
 ## Bash methods
 When running the interactive Environment, the following methods are supported:
 
