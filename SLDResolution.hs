@@ -69,6 +69,7 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
           case pure (>=) <*> (eval x) <*> (eval y) of
             Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
             _ -> []
+        -- Normal case
         applyRules vs stra (Prog rs) g = catMaybes (fmap (resolutionStep vs stra (Prog rs) g) rs) 
 
         -- Converts a list of terms into the prolog predicate for lists with terms as entries as before respectively
