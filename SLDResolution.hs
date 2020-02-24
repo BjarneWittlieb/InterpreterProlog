@@ -43,7 +43,32 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
         applyRules vs stra p (Goal ((Comb "is" [x, y]):ts)) =
           case ((eval x) >>= (\s -> pure (Comb (show s) []))) >>= (unify y) of
             Nothing -> []
-            Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]       
+            Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]
+        -- Boolean eval predicates
+        applyRules vs stra p (Goal ((Comb "=.=" [x, y]):ts)) =
+          case pure (==) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+            _ -> []
+        applyRules vs stra p (Goal ((Comb "=\\=" [x, y]):ts)) =
+          case pure (/=) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+            _ -> []
+        applyRules vs stra p (Goal ((Comb "<" [x, y]):ts)) =
+          case pure (<) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+            _ -> []
+        applyRules vs stra p (Goal ((Comb ">" [x, y]):ts)) =
+          case pure (>) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+            _ -> []
+        applyRules vs stra p (Goal ((Comb "=<" [x, y]):ts)) =
+          case pure (<=) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+            _ -> []
+        applyRules vs stra p (Goal ((Comb ">=" [x, y]):ts)) =
+          case pure (>=) <*> (eval x) <*> (eval y) of
+            Just True -> [(empty, resolution vs stra p (apply empty (Goal ts)))]
+            _ -> []
         applyRules vs stra (Prog rs) g = catMaybes (fmap (resolutionStep vs stra (Prog rs) g) rs) 
 
         -- Converts a list of terms into the prolog predicate for lists with terms as entries as before respectively
@@ -56,7 +81,7 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
         resolutionStep vs stra p (Goal (t:t')) (Rule t1 ts) = let subst = unify t t1 in 
             if (isNothing subst) then Nothing
                                  else Just (fromJust subst, resolution vs stra p (Goal (apply (fromJust subst) (ts ++ t'))))
-            
+
 
 -- Evaluates an arethmetic term if possible
 eval :: Term -> Maybe Int
