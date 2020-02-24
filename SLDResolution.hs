@@ -157,7 +157,7 @@ type Strategy = SLDTree -> [Subst]
 dfs :: Strategy
 dfs (Node (Goal []) _) = [empty]
 dfs (Node _ []) = []
-dfs (Node goal ((s, tree):ms)) = (fmap (\x -> compose x s) (dfs tree)) ++ dfs (Node goal ms)
+dfs (Node goal ((s, tree):ms)) = (fmap (\x -> simplify (allVars goal) (compose x s)) (dfs tree)) ++ dfs (Node goal ms)
 
 -- breadth-first search
 bfs :: Strategy
@@ -174,7 +174,7 @@ bfs tree = fst (bfsAcc [(tree, empty)]) where
   oneStep ((Node (Goal []) _), s) = ([s],[])
   oneStep ((Node _ []), _) = ([],[])
   oneStep (Node goal ((s1, tree1):ms), s2) = let rest = oneStep (Node goal ms, s2) 
-                                                  in (fst rest, (tree1, compose s1 s2):(snd rest))
+                                                  in (fst rest, (tree1, simplify (allVars goal) (compose s1 s2)):(snd rest))
 
 -- iterative depth-first search
 idfs :: Strategy
@@ -189,7 +189,7 @@ idfs tree1 = idfsAcc 0 tree1 where
                      | i < 0 = ([], False)
   bdfs _ (Node _ []) = ([], False)
   bdfs i (Node goal ((s, tree):ms)) = let sol = (bdfs (i - 1) tree)
-    in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> compose x s) (fst sol), snd sol) (bdfs i (Node goal ms))
+    in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> simplify (allVars goal) (compose x s)) (fst sol), snd sol) (bdfs i (Node goal ms))
 
 -- solves a goal with a strategie using all rules from a program
 solve :: Strategy -> Prog -> Goal -> [Subst]

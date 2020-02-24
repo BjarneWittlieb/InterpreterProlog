@@ -52,7 +52,7 @@ instance Substitutable a => Substitutable [a] where
 -- Composing to Substitions
 -- Note that only in the right side Terms of the first substition are updated!
 compose :: Subst -> Subst -> Subst
-compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
+compose (Subst xs) (Subst ys) = (Subst (substitutedSet ++ filteredSet)) where
   -- Substitutes all terms on the right side from the first Substitution with the second
   substitutedSet = (fmap (\(x, y) -> (x, apply (Subst xs) y)) ys)
   -- Filters the substitutions from the first substitution out of the second one (based on the vars on the left side)
@@ -68,7 +68,7 @@ repeatSubst :: Subst -> Subst
 repeatSubst s = repeatSubstAcc s s where
   repeatSubstAcc :: Subst -> Subst -> Subst
   repeatSubstAcc s1 s2 | disjunct s1 s2 = s2
-                         | otherwise = repeatSubstAcc s1 (compose s1 s2)
+                       | otherwise = repeatSubstAcc s1 (compose s1 s2)
   disjunct :: Subst -> Subst -> Bool
   disjunct (Subst xs) (Subst ys) = (filter ((flip elem) (concat (fmap (\(_, y) -> allVars y) ys))) (fmap fst xs)) == []
 
