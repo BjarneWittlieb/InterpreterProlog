@@ -90,8 +90,7 @@ isComparison _ = (False, (\_ _ -> False))
 
 -- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
-simplify vars s = let Subst s' = restrictTo vars (repeatSubst s) in
-  renameSubst vars (fst (runState (repeatState (length s') (f vars) (Subst s')) (Subst s'))) where
+simplify vars s = renameSubst vars (fst (runState (repeatState (not.isEmpty) (f vars) s) s)) where
   f :: [VarName] -> Subst -> State Subst Subst
   f vs sub = state g where
     g (Subst []) = (sub, empty)
@@ -109,7 +108,7 @@ type Strategy = SLDTree -> [Subst]
 dfs :: Strategy
 dfs (Node (Goal []) _) = [empty]
 dfs (Node _ []) = []
-dfs (Node goal ((s, tree):ms)) = (fmap (\x -> simplify (allVars goal) (compose x s)) (dfs tree)) ++ dfs (Node goal ms)
+dfs (Node goal ((s, tree):ms)) = (fmap (\x -> restrictTo (allVars goal) (repComp x s)) (dfs tree)) ++ dfs (Node goal ms)
 
 -- breadth-first search
 bfs :: Strategy
@@ -126,7 +125,7 @@ bfs tree = fst (bfsAcc [(tree, empty)]) where
   oneStep ((Node (Goal []) _), s) = ([s],[])
   oneStep ((Node _ []), _) = ([],[])
   oneStep (Node goal ((s1, tree1):ms), s2) = let rest = oneStep (Node goal ms, s2) 
-                                                  in (fst rest, (tree1, simplify (allVars goal) (compose s1 s2)):(snd rest))
+                                                  in (fst rest, (tree1, restrictTo (allVars goal) (repComp s1 s2)):(snd rest))
 
 -- iterative depth-first search
 idfs :: Strategy
@@ -141,7 +140,7 @@ idfs tree1 = idfsAcc 0 tree1 where
                      | i < 0 = ([], False)
   bdfs _ (Node _ []) = ([], False)
   bdfs i (Node goal ((s, tree):ms)) = let sol = (bdfs (i - 1) tree)
-    in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> simplify (allVars goal) (compose x s)) (fst sol), snd sol) (bdfs i (Node goal ms))
+    in (\(a, b) (c, d) -> (a ++ c, b || d)) (fmap (\x -> restrictTo (allVars goal) (repComp x s)) (fst sol), snd sol) (bdfs i (Node goal ms))
 
 -- solves a goal with a strategie using all rules from a program
 solve :: Strategy -> Prog -> Goal -> [Subst]

@@ -7,7 +7,7 @@ import Parser
 import Substitutions
 import Prettyprinting
 import System.IO
-
+import Vars
 
 -- Welcomes the User and loops
 main :: IO ()
@@ -61,7 +61,7 @@ process file strat cmd        = do
         -- if the parse was successful, solve the goal and call goThroughSubs to generate the output 
         (Right goal) -> do
             -- putStrLn(show (sld strat file goal))
-            goThroughSubs (solve strat file goal)
+            goThroughSubs (fmap (simplify (allVars goal)) (solve strat file goal))
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()

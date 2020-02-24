@@ -24,8 +24,8 @@ ds (Comb f xs) (Comb g ys) | f /= g                     = Just ((Comb f xs), (Co
 unify :: Term -> Term -> Maybe Subst
 unify t1 t2 = case (ds t1 t2) of
     Nothing -> Just empty
-    Just (Var v, q) -> let sub = single v q in fmap (compose sub) (unify (apply sub t1) (apply sub t2))
+    Just (Var v, q) -> let sub = single v q in fmap (repComp sub) (unify (apply sub t1) (apply sub t2))
     Just _ -> Nothing
 
 applySub :: Subst -> Subst -> Subst
-applySub s (Subst ys) = foldr compose empty (catMaybes (fmap (\(v, t) -> (uncurry unify) (apply s (Var v), apply s t)) ys))
+applySub s (Subst ys) = foldr repComp empty (catMaybes (fmap (\(v, t) -> (uncurry unify) (apply s (Var v), apply s t)) ys))

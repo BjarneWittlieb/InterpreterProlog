@@ -1,4 +1,4 @@
-module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty, repeatSubst) where
+module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty, repeatSubst, repComp) where
 
 import Type
 import Prettyprinting
@@ -22,10 +22,11 @@ empty :: Subst
 empty = Subst []
 
 single :: VarName -> Term -> Subst
+single v (Var w) | v == w = empty
 single v t = Subst [(v, t)]
 
 multiple :: [VarName] -> [Term] -> Subst
-multiple vs ts = foldr (\(x, y) -> compose (single x y)) empty (zip vs ts)
+multiple vs ts = foldr (\(x, y) -> repComp (single x y)) empty (zip vs ts)
 
 -- Applies A Substitution
 class Substitutable a where 
@@ -52,7 +53,7 @@ instance Substitutable a => Substitutable [a] where
 -- Composing to Substitions
 -- Note that only in the right side Terms of the first substition are updated!
 compose :: Subst -> Subst -> Subst
-compose (Subst xs) (Subst ys) = repeatSubst (Subst (substitutedSet ++ filteredSet)) where
+compose (Subst xs) (Subst ys) = Subst (substitutedSet ++ filteredSet) where
   -- Substitutes all terms on the right side from the first Substitution with the second
   substitutedSet = (fmap (\(x, y) -> (x, apply (Subst xs) y)) ys)
   -- Filters the substitutions from the first substitution out of the second one (based on the vars on the left side)
@@ -71,6 +72,9 @@ repeatSubst s = repeatSubstAcc s s where
                        | otherwise = repeatSubstAcc s1 (compose s1 s2)
   disjunct :: Subst -> Subst -> Bool
   disjunct (Subst xs) (Subst ys) = (filter ((flip elem) (concat (fmap (\(_, y) -> allVars y) ys))) (fmap fst xs)) == []
+
+repComp :: Subst -> Subst -> Subst
+repComp = (.) (.) (.) repeatSubst compose
 
 fromSubst :: Subst -> [(VarName, Term)]
 fromSubst (Subst x) = x
