@@ -29,7 +29,7 @@ grossmutter(E, G) :- mutter(E, M), mutter(M, G).
 grossmutter(E, G) :- vater(E, V), mutter(V, G).
 
 % Definition der Geschwister Relation
-geschwister(P, G) :- mutter(P, M), mutter(G, M), vater(P, V), vater(G, V), P \= G.
+geschwister(P, G) :- mutter(P, M), mutter(G, M), vater(P, V), vater(G, V), \=(P, G).
 
 % Relation für Tante oder Onkel sein. Inklusive angeheiratet
 % Das funktioniert, da diejenigen die keine Großmutter haben auch keine Tante haben (da sie nicht über die Mutter verbunden sind).

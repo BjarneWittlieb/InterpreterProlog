@@ -9,19 +9,19 @@ kandidat(weasley).
 possibleVorstand(V, K, S) :- kandidat(V), kandidat(K), kandidat(S), notEqual(V, K), notEqual(V, S), notEqual(K, S).
 
 % eine NotEqual Relation.
-notEqual(X, Y) :- kandidat(X), kandidat(Y), X \= Y.
+notEqual(X, Y) :- kandidat(X), kandidat(Y), \=(X, Y).
 
 % Hilfsrelation member
-member(P, [S|_]) :- P = S.
+member(P, [S|_]) :- =(P, S).
 member(P, [_|L]) :- member(P, L).
 
 % Restrictions aus der Aufgabenstellung:
 % Potter und Malfoy follen nicht gemeinsam in den Vorstand:
 malfPottVorstand(V, K, S) :- inVorstand(V, K, S, granger), inVorstand(V, K, S, weasley).
 
-inVorstand(V, _, _, X) :- V = X.
-inVorstand(_, K, _, X) :- K = X.
-inVorstand(_, _, S, X) :- S = X.
+inVorstand(V, _, _, X) :- =(V, X).
+inVorstand(_, K, _, X) :- =(K, X).
+inVorstand(_, _, S, X) :- (S, X).
 
 % Malfoy ist nur im Vorstand, wenn granger vorsitzende ist (das ist aber nicht gerade lore):
 malfGrangerVorstand(granger, malfoy, _).
