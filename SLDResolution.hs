@@ -6,8 +6,10 @@ import Vars
 import Substitutions
 import Rename
 import Unification
+
 import Data.Maybe
 import Control.Monad.State.Lazy
+import Text.Read
 
 
 -- Data representation of an SLD Tree
@@ -22,17 +24,29 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
     resolution :: [VarName] -> Strategy -> Prog -> Goal -> SLDTree
     resolution vars strat pr goal = Node goal (applyRules (snd renamedProgram) strat (fst renamedProgram) goal) where
         renamedProgram = (runState (rename pr) vars)
-        applyRules :: [VarName] -> Strategy -> Prog -> Goal -> [(Subst, SLDTree)]           
+
+        -- Applies the Rules of the Program to the goal
+        applyRules :: [VarName] -> Strategy -> Prog -> Goal -> [(Subst, SLDTree)]
+        -- Higher order term 'call'
         applyRules vs stra p (Goal ((Comb "call" ((Comb f xs):ys)):ts)) = let s = (solve stra p (Goal [Comb f (xs ++ ys)])) in
             (fmap (\sub -> (sub, resolution vs stra p (Goal ts))) s)
+        -- Higher order term '\+', the finite not
         applyRules vs stra p (Goal ((Comb "\\+" [x]):ts)) = case solve stra p (Goal [Comb "call" [x]]) of
                                                               [] -> [(empty, resolution vs stra p (Goal ts))]
                                                               _ -> []
+        -- Higher order term 'findall'
         applyRules vs stra p (Goal ((Comb "findall" [x, y, z]):ts)) = 
           case unify z (listToTerm (fmap (((flip apply) x).(simplify (allVars (Goal [x, y, z])))) (solve stra p (Goal [Comb "call" [y]])))) of
             Nothing -> []
-            Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]        
+            Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]  
+        -- The evalutaion of terms 'is'
+        applyRules vs stra p (Goal ((Comb "is" [x, y]):ts)) =
+          case ((eval x) >>= (\s -> pure (Comb (show s) []))) >>= (unify y) of
+            Nothing -> []
+            Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]       
         applyRules vs stra (Prog rs) g = catMaybes (fmap (resolutionStep vs stra (Prog rs) g) rs) 
+
+        -- Converts a list of terms into the prolog predicate for lists with terms as entries as before respectively
         listToTerm :: [Term] -> Term
         listToTerm [] = Comb "[]" []
         listToTerm (t:ts) = Comb "." [t, listToTerm ts]
@@ -43,6 +57,16 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
             if (isNothing subst) then Nothing
                                  else Just (fromJust subst, resolution vs stra p (Goal (apply (fromJust subst) (ts ++ t'))))
             
+
+-- Evaluates an arethmetic term if possible
+eval :: Term -> Maybe Int
+eval (Comb "+" [x, y]) = pure (+) <*> (eval x) <*> (eval y)
+eval (Comb "-" [x, y]) = pure (-) <*> (eval x) <*> (eval y)
+eval (Comb "*" [x, y]) = pure (*) <*> (eval x) <*> (eval y)
+eval (Comb "div" [x, y]) = pure (div) <*> (eval x) <*> (eval y)
+eval (Comb "mod" [x, y]) = pure (mod) <*> (eval x) <*> (eval y)
+eval (Comb num []) = (readMaybe num) :: Maybe Int
+eval _ = Nothing
 
 {--- creates a SLD tree out of a program and a goal
 sld :: Prog -> Strategy -> Goal -> SLDTree
