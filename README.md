@@ -27,7 +27,7 @@ Available are ```dfs```, ```bfs``` and ```idfs```.
 
 ## Supported Prolog predicates
 
-There are a couple of charactaristic prolog commands that are supported.
+There are a couple of charactaristic prolog commands that are supported. Note that infix predicates and the cut operator are NOT supported!
 
 ### Higher order predicates
 ```call(T1, T2, ..., TN)``` Prooves the Terms within in the predicate T1 to TN. The predicate is true when the foal could be prooven.
