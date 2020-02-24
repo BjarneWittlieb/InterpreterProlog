@@ -1,4 +1,4 @@
-module SLDResolution(Strategy, dfs, bfs, idfs, solve, simplify) where
+module SLDResolution(Strategy, dfs, bfs, idfs, solve, simplify, sld) where
 -- NOT exporting the SLDTree constructor, cause it doesnt matter
 
 import Type
