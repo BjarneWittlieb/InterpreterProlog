@@ -27,35 +27,35 @@ Available are ```dfs```, ```bfs``` and ```idfs```.
 
 ## Supported Prolog predicates
 
-There are a couple of charactaristic prolog commands that are supported.
+There are a couple of charactaristic prolog commands that are supported. Note that infix predicates and the cut operator are NOT supported!
 
 ### Higher order predicates
-```call(T1, T2, ..., TN)``` Prooves the Terms within in the predicate T1 to TN. The predicate is true when the foal could be prooven.
+```call(T1, T2, ..., TN)``` Prooves the Term T1, T2 to TN are appended to the predicate in T1. The predicate is true when the goal could be prooven.
 
 ```\+(T)``` Tries to proof the term T and returns true when it could not be proofed.
 
-```findall(X, Term, Container)``` Tries to proof the term Term. Container is the list of all Values that the variable X can be substituted with.
+```findall(Template, Term, Container)``` Tries to proof the term Term. Container is the list of all values that the template can be substituted with.
 
 ### Arithmecy
-```is(A, X)``` Evaluates the arethmetic Term A and unfies with Variable (or constant) X.
+```is(A, X)``` Evaluates the arithmetic Term A and unfies with Variable (or constant) X.
 
-```=.=(A1, A2)``` Evaluates the arethmetic Terms A1, A2 and is true when they are equal.
+```=.=(A1, A2)``` Evaluates the arithmetic Terms A1, A2 and is true when they are equal.
 
-```=\=(A1, A2)``` Evaluates the arethmetic Terms A1, A2 and is true when they are not equal. Equivalent to ```\+(=.=(A1, A2))```.
+```=\=(A1, A2)``` Evaluates the arithmetic Terms A1, A2 and is true when they are not equal. Equivalent to ```\+(=.=(A1, A2))```.
 
 ```<(A1, A2)```, ```>(A1, A2)```, ```=<(A1, A2)```, ```>=(A1, A2)``` are defined in similar ways.
 
-### Arethmetic terms
-Arethmetic terms are terms that suffice the following rules:
+### Arithmetic terms
+Arithmetic terms are terms that suffice the following rules:
 
-```c``` is an arethmetic term, where c is an Integer.
+```c``` is an arithmetic term, where c is an Integer.
 
-```+(A1, A2)``` is an arethmetic term, where A1 and A2 are both arethmetic terms.
+```+(A1, A2)``` is an arithmetic term, where A1 and A2 are both arithmetic terms.
 
-```-(A1, A2)``` is an arethmetic term, where A1 and A2 are both arethmetic terms.
+```-(A1, A2)``` is an arithmetic term, where A1 and A2 are both arithmetic terms.
 
-```*(A1, A2)``` is an arethmetic term, where A1 and A2 are both arethmetic terms.
+```*(A1, A2)``` is an arithmetic term, where A1 and A2 are both arithmetic terms.
 
-```div(A1, A2)``` is an arethmetic term, where A1 and A2 are both arethmetic terms.
+```div(A1, A2)``` is an arithmetic term, where A1 and A2 are both arithmetic terms.
 
-```mod(A1, A2)``` is an arethmetic term, where A1 and A2 are both arethmetic terms.
+```mod(A1, A2)``` is an arithmetic term, where A1 and A2 are both arithmetic terms.

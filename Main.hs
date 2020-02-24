@@ -6,7 +6,6 @@ import SLDResolution
 import Parser
 import Substitutions
 import Prettyprinting
-import Vars
 import System.IO
 
 
@@ -61,7 +60,7 @@ process file strat cmd        = do
             loop file strat
         -- if the parse was successful, solve the goal and call goThroughSubs to generate the output 
         (Right goal) -> do
-            let goalVars = allVars goal in goThroughSubs (fmap (simplify goalVars) (solve strat file goal))
+            goThroughSubs (solve strat file goal)
             loop file strat
 
 goThroughSubs :: [Subst] -> IO ()
