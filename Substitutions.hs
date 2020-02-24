@@ -68,10 +68,9 @@ restrictTo vs (Subst (x:xs)) | (elem (fst x) vs) = let Subst ys = restrictTo vs 
 repeatSubst :: Subst -> Subst
 repeatSubst s = repeatSubstAcc s s where
   repeatSubstAcc :: Subst -> Subst -> Subst
-  repeatSubstAcc s1 s2 | disjunct s1 s2 = s2
-                       | otherwise = repeatSubstAcc s1 (compose s1 s2)
-  disjunct :: Subst -> Subst -> Bool
-  disjunct (Subst xs) (Subst ys) = (filter ((flip elem) (concat (fmap (\(_, y) -> allVars y) ys))) (fmap fst xs)) == []
+  repeatSubstAcc (Subst []) s1 = s1
+  repeatSubstAcc (Subst s1) s2  | otherwise = let (Subst s') = restrictTo (concat (fmap (\(_, y) -> allVars y) s1)) (Subst s1) in 
+    if (length s1 == length s') then empty else repeatSubstAcc (Subst s') (compose (Subst s') s2)
 
 repComp :: Subst -> Subst -> Subst
 repComp = (.) (.) (.) repeatSubst compose
