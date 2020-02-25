@@ -18,7 +18,7 @@ data SLDTree = Node Goal [(Subst, SLDTree)]
 
 -- creates a SLD tree out of a program and a goal
 sld :: Strategy -> Prog -> Goal -> SLDTree
-sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars finalGoal))) freshVars) strategy program noUnderscoreGoal where
+sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars noUnderscoreGoal))) freshVars) strategy program noUnderscoreGoal where
     noUnderscoreGoal = Goal (fst (runState (replaceList (fromGoal finalGoal)) (filter (\x -> not (elem x (allVars finalGoal))) freshVars)))
     -- main function, that does the SLD resultion
     resolution :: [VarName] -> Strategy -> Prog -> Goal -> SLDTree
@@ -90,7 +90,7 @@ isComparison _ = (False, (\_ _ -> False))
 
 -- simplifies a substitution to generate a better output
 simplify :: [VarName] -> Subst -> Subst
-simplify vars s = renameSubst vars (fst (runState (repeatState (not.isEmpty) (f vars) s) s)) where
+simplify vars s = restrictTo vars (renameSubst vars (fst (runState (repeatState (not.isEmpty) (f vars) s) s))) where
   f :: [VarName] -> Subst -> State Subst Subst
   f vs sub = state g where
     g (Subst []) = (sub, empty)

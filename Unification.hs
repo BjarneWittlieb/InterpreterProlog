@@ -8,6 +8,8 @@ import Type
 
 -- Calculates the first different values of the disagreement set for two terms
 ds :: Term -> Term -> Maybe (Term, Term)
+ds (Var "_") _ = Nothing
+ds _ (Var "_") = Nothing
 -- To variables are equal if and only if they have the same name
 ds (Var x) (Var y)         | x == y                     = Nothing
                            | otherwise                  = Just ((Var x), (Var y))

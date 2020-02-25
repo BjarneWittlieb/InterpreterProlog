@@ -43,7 +43,7 @@ instance Renameable Rule where
       -- replaces all underscore variables first
       (rule, vars) = runState (replaceUnderscoreRule r) (filter (\x -> not (elem x (allVars r))) vnames)
       -- a list of all variables in the Rule
-      ruleVars = allVars rule
+      ruleVars = (allVars rule)
       -- a list of all variables, that will be used in the substituted Rule
       substVars = splitAt (length ruleVars) vars
       
