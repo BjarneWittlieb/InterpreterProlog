@@ -112,20 +112,12 @@ dfs (Node goal ((s, tree):ms)) = (fmap (\x -> restrictTo (allVars goal) (repComp
 
 -- breadth-first search
 bfs :: Strategy
-bfs tree = fst (bfsAcc [(tree, empty)]) where
-  -- increses the depth of the search one step at a time
-  bfsAcc :: [(SLDTree, Subst)] -> ([Subst], [(SLDTree, Subst)])
-  bfsAcc [] = ([], [])
-  bfsAcc s = let nextStep = foldr concatPair ([],[]) (fmap oneStep s)
-             in concatPair (fst nextStep, []) (bfsAcc (snd nextStep))
-  concatPair :: ([a], [b]) -> ([a], [b]) -> ([a], [b])
-  concatPair (a1, b1) (a2, b2) = (a1 ++ a2, b1 ++ b2)
-  -- does one step of the SLD-Resolution
-  oneStep :: (SLDTree, Subst) -> ([Subst], [(SLDTree, Subst)])
-  oneStep ((Node (Goal []) _), s) = ([s],[])
-  oneStep ((Node _ []), _) = ([],[])
-  oneStep (Node goal ((s1, tree1):ms), s2) = let rest = oneStep (Node goal ms, s2) 
-                                                  in (fst rest, (tree1, restrictTo (allVars goal) (repComp s1 s2)):(snd rest))
+bfs tree = concat (runRepeatState (not.null) (\_ -> st) [] [([], tree)]) where
+  st :: State [([([VarName], Subst)], SLDTree)] [Subst]
+  st = state oneStep where
+    oneStep [] = ([], [])
+    oneStep ((s, Node (Goal []) []):xs) = let (x, y) = oneStep xs in ((foldr (\(vs, s1) s2 -> restrictTo vs (repComp s1 s2)) empty (reverse s)):x, y)
+    oneStep ((s, Node goal xs):ys) = let (x, y) = oneStep ys in (x, (fmap (\(a, b) -> ((allVars goal, a):s, b)) xs) ++ y)
 
 -- iterative depth-first search
 idfs :: Strategy
