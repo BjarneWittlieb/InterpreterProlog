@@ -70,16 +70,18 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
 
 
 -- Evaluates an arethmetic term if possible
-eval :: Term -> Maybe Int
+eval :: Term -> Maybe Integer
 eval (Comb "+" [x, y]) = pure (+) <*> (eval x) <*> (eval y)
 eval (Comb "-" [x, y]) = pure (-) <*> (eval x) <*> (eval y)
 eval (Comb "*" [x, y]) = pure (*) <*> (eval x) <*> (eval y)
+eval (Comb "div" [_, Comb "0" []]) = Nothing
 eval (Comb "div" [x, y]) = pure (div) <*> (eval x) <*> (eval y)
+eval (Comb "mod" [_, Comb "0" []]) = Nothing
 eval (Comb "mod" [x, y]) = pure (mod) <*> (eval x) <*> (eval y)
-eval (Comb num []) = (readMaybe num) :: Maybe Int
+eval (Comb num []) = (readMaybe num) :: Maybe Integer
 eval _ = Nothing
 
-isComparison :: String -> (Bool, Int -> Int -> Bool)
+isComparison :: String -> (Bool, Integer -> Integer -> Bool)
 isComparison "=:=" = (True, (==)) 
 isComparison "=\\=" = (True, (/=))
 isComparison "<" = (True, (<))
@@ -97,9 +99,9 @@ simplify vars s = restrictTo vars (renameSubst vars (fst (runState (repeatState 
     g (Subst ((v, Var w):xs)) | not (elem w vs) = (applySub (single w (Var v)) sub, applySub (single w (Var v)) (Subst xs))
     g (Subst (_:xs)) = (sub, Subst xs)
   renameSubst :: [VarName] -> Subst -> Subst
-  renameSubst vs sub = applySub (multiple v (fmap (\x -> Var x) subVars)) sub where
-      v = filter (\x -> not (elem x vs)) (allVars sub)
-      subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
+  renameSubst vs sub = applySub (Subst (zip v (fmap (\x -> Var x) subVars))) sub where
+    v = filter (\x -> not (elem x vs)) (allVars sub)
+    subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
 
 type Strategy = SLDTree -> [Subst]

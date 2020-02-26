@@ -39,7 +39,7 @@ runRepeatState f g x y | f y = let (x', y') = runState (g x) y in x':(runRepeatS
 -- returns the changed Rule and a superset of the input list, including all variables in the changed Rule
 instance Renameable Rule where 
   rename r = state f where
-    f vnames = (apply (multiple ruleVars (fmap (\x -> (Var x)) (fst substVars))) rule, snd substVars) where
+    f vnames = (apply (Subst (zip ruleVars (fmap (\x -> (Var x)) (fst substVars)))) rule, snd substVars) where
       -- replaces all underscore variables first
       (rule, vars) = runState (replaceUnderscoreRule r) (filter (\x -> not (elem x (allVars r))) vnames)
       -- a list of all variables in the Rule

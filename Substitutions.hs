@@ -1,4 +1,4 @@
-module Substitutions(Subst(Subst), empty, single, multiple, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty, repeatSubst, repComp) where
+module Substitutions(Subst(Subst), empty, single, Substitutable, apply, compose, restrictTo, fromSubst, isEmpty, repeatSubst, repComp) where
 
 import Type
 import Prettyprinting
@@ -25,8 +25,6 @@ single :: VarName -> Term -> Subst
 single v (Var w) | v == w = empty
 single v t = Subst [(v, t)]
 
-multiple :: [VarName] -> [Term] -> Subst
-multiple vs ts = foldr (\(x, y) -> repComp (single x y)) empty (zip vs ts)
 
 -- Applies A Substitution
 class Substitutable a where 
