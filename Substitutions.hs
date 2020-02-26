@@ -81,3 +81,4 @@ fromSubst (Subst x) = x
 isEmpty :: Subst -> Bool
 isEmpty (Subst []) = True
 isEmpty _ = False
+
