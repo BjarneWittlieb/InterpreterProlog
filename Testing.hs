@@ -40,9 +40,19 @@ substFromStrings strList = Subst (fmap tupleFromString strList) where
 
 
 -- String helper Functions for the Substitutions pseudo parser
+
+-- Breaks a String at the first occurence of the character char into two substrings
+-- strBreak 'c' "abcdecf" == ("ab", "cdecf")
 strBreak :: Char -> String -> (String , String)
 strBreak c toSplit = (span (/= c) toSplit)
 
+-- NOT a real Split!
+-- Splits a string at a specific substring if it contains this substring
+-- Assumes that at the first occurence of the first character of the substring splitter#
+--      the splitter also starts
+-- strSplit "abf -as- awfj" "-as-"== ("abf ", " awfj")
+-- strSplit "hello world" "lost" == ("hello world", "")
+-- strSplit "hey - -> no" "->" == ("hey - -> no", "")   !! THIS IS THE EDGE CASE FOR EXAMPLE
 strSplit :: String -> String -> (String , String)
 strSplit splitter toSplit = case stripPrefix splitter (snd break) of
     Just str -> (fst break, str)
@@ -50,10 +60,19 @@ strSplit splitter toSplit = case stripPrefix splitter (snd break) of
     where
         break = strBreak (splitter!!0) toSplit
 
+-- Trims the given string, that is removing all whitspace chars at the beginning and end
 strTrim :: String -> String
-strTrim "" = ""
-strTrim (' ':str) = strTrim str
-strTrim (c:str) = c:(strTrim str)
+strTrim str = strTrimBegin (strTrimEnd str)
+
+-- Removes all whitespaces of a string at the beginning
+strTrimBegin :: String -> String
+strTrimBegin (' ':str) = strTrimBegin str
+strTrimBegin ('\n':str) = strTrimBegin str
+strTrimBegin str = str
+
+-- Removes all whitespaces of a string at the end
+strTrimEnd :: String -> String
+strTrimEnd str = reverse (strTrimBegin (reverse str))
 
 
 
@@ -77,21 +96,28 @@ eqSubsts g s1 s2 = let vs = allVars g in
 
 
 -- Helper Functions for certain solution testing
+
+-- Tests whether the solve returns expted list of substitutoins
+-- The substitions have to be in right order, though they will be normified
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
-testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
+testForSolution p g strat subs = eqSubsts g (solve staht p g) subs
 
-
+-- Testcase for checking whether the first substituions of the solve are equal to the tested substitutions
+-- Especially useful for cases where there are infinite solutions
 testForSolutionInf :: Prog -> Goal -> Strategy -> [Subst] -> Bool
 testForSolutionInf p g strat subs = eqSubsts g (take (length subs) (solve strat p g)) subs
 
+-- Tests whether the solve returns a specific amount of solutions
 testForSolutionLength :: Prog -> Goal -> Strategy -> Int -> Bool
 testForSolutionLength p g strat l = (length (solve strat p g)) == l
 
+-- Tests whether the goal cannot be proven
 testNoSolution :: Prog -> Goal -> Strategy -> Bool
 testNoSolution p g strat = case solve strat p g of
     [] -> True
     _ -> False
 
+-- Tests whether the goal can be proven but only the empty substituion is returned
 testIfEmpty :: Prog -> Goal -> Strategy -> Bool
 testIfEmpty p g strat = case solve strat p g of
     [Subst []] -> True
@@ -102,7 +128,6 @@ testIfEmpty p g strat = case solve strat p g of
 Testing functions for the unification algorithm.
 
  -}
-
 twoVarsTerm = fromString "=(A, B)."
 unify_twoVars :: Strategy -> Bool
 unify_twoVars strat = case solve strat (Prog []) twoVarsTerm of
@@ -207,7 +232,6 @@ prop_idfs_anonymous_blank2 = testIfEmpty anonymousProgram anonymousBlank2 idfs
 Testing the arithmecy functions.
 
 -}
-
 arithmecyProgram :: Prog
 arithmecyProgram = case parse "factorial(0, 1).\nfactorial(N, F) :- >(N, 0), is(N1, -(N, 1)), factorial(N1, F1), is(F, *(F1, N))." of
     Right p -> p
@@ -267,7 +291,6 @@ prop_idfs_arithmecy_factorial3 = testForSolution arithmecyProgram factorial3 idf
 Testing the List cases.
 
 -}
-
 listProgram :: Prog
 listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(R, L, RL).\nlast(L, E) :- append(_, [E], L).\nreverse([], []).\nreverse([E|R], L) :- reverse(R, UR), append(UR, [E], L).\nmember(E, [E|_]).\nmember(E, [_|R]) :- member(E,R).\nperm([], []).\nperm(L, [E|R]) :- delete(E, L, LwithoutE), perm(LwithoutE, R).\ndelete(E, L, R) :- append(L1, [E|L2], L), append(L1, L2, R).\nsort(L, S) :- perm(L, S), sorted(S).\nsorted([]).\nsorted([_]).\nsorted([E1|[E2|L]]) :- =<(E1, E2), sorted([E2|L]).\nlength([], 0).\nlength([_|Xs], N) :- length(Xs, N1), is(N, +(N1, 1)).\nlengthP([], o).\nlengthP([_|Xs], s(N)) :- lengthP(Xs, N)." of
     Right p -> p
@@ -346,6 +369,12 @@ prop_dfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o))).
 prop_bfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o))).") bfs subst_lengthP
 prop_idfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o))).") idfs subst_lengthP
 
+
+{-
+
+Testing the Higher order terms using familyProgram.
+
+-}
 familyProgram:: Prog
 familyProgram = case parse "ehemann(christine, heinz).\nehemann(maria, fritz).\nehemann(monika, herbert).\nehemann(angelika, hubert).\nmutter(herbert, christine).\nmutter(angelika, christine).\nmutter(hubert, maria).\nmutter(susanne, monika).\nmutter(norbert, monika).\nmutter(andreas, angelika).\nvater(K, V) :- ehemann(M, V), mutter(K, M).\nelter(K, E) :- vater(K, E).\nelter(K, E) :- mutter(K, E).\ngrossvater(E, G) :- elter(E, F), vater(F, G).\ngrossvaeter(Gs) :- findall([E, G], grossvater(E, G), Gs).\nvorfahre(N, V) :- vorfahre(N, V2), vorfahre(V2, V).\nvorfahre(N, V) :- elter(N, V).\ngeschwister(S, P) :- mutter(S, M), mutter(P,M), \\+(=(P, S))." of
     Right p -> p
