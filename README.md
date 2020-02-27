@@ -18,7 +18,7 @@ When running the interactive environment, the following methods are supported:
 
 ```:l <filename>``` to load a Prolog filename into the current system to operate on.
 
-```:s <strategy>``` to switch the strategy which is used to search the dfs tree for solutions.
+```:s <strategy>``` to switch the strategy which is used to search the sld tree for solutions.
 Available are ```dfs```, ```bfs``` and ```idfs```.
 
 ```:q``` to exit the current environment.
