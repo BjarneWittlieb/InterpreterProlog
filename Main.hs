@@ -69,6 +69,8 @@ process file strat cmd        = do
             goThroughSubs (solve strat file goal)
             loop file strat
 
+-- Goes through a list of substitutions where the next can be seen with ';'
+-- The user can return to the main loop with '.
 goThroughSubs :: [Subst] -> IO ()
 -- if there are no more substitutions, output 'false'
 goThroughSubs [] = do
@@ -105,6 +107,7 @@ parseLine _ _ = do
     return ()
     
 
+-- Processes a command that startet with :
 processCommand :: Prog -> Strategy -> String -> IO ()
 
 -- Help window
