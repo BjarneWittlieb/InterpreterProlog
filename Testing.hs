@@ -109,8 +109,8 @@ prop_bfs_bothanonym = testIfEmpty bothEmpty bfs
 prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
 
 
-testForSolution :: Goal -> Strategy -> [Subst] -> Bool
-testForSolution f strat subs = case solve strat (Prog []) g
+testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
+testForSolution p f strat subs = case solve strat p g
 
 testNoSolution :: Goal -> Strategy -> Bool
 testIfEmpty g strat = case solve strat (Prog []) g of
@@ -122,8 +122,11 @@ testIfEmpty g strat = case solve strat (Prog []) g of
     [Subst []] -> True
     _ -> False
 
-prop_append1_dfs :: Bool
-prop_append1_dfs solve dfs 
+prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") dfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
+prop_bfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") bfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
+prop_idfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") idfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
+
+
 
 return []
 runTests = $quickCheckAll
