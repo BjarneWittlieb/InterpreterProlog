@@ -35,6 +35,11 @@ termToPeano (Comb "o" [])   = Just O
 termToPeano (Comb "s" [x])  = (termToPeano x) >>= (Just . S)
 termToPeano _               = Nothing
 
+fromString :: String -> Goal
+fromString s = case parse s of
+    Right g -> g
+    _       -> error "Parse error!"
+
 instance Arbitrary Peano where
     arbitrary = do
         ranInt <- arbitrary
@@ -45,44 +50,71 @@ instance Eq Peano where
     (S x) == (S y)  = x == y
     _ == _          = False
 
+instance Eq Subst where
+    (Subst xs) (Subst ys) = (isSubsequenceOf xs ys) && (isSubsequenceOf ys xs)
+instance Eq (Varname, Term) where
+    (v1, t1) == (v2, t2) = (v1 == v2) && (termEqual t1 t2) where
+        termEqual :: Term -> Term -> Bool
+        termEqual (Var x) (Var y) = (x == y)
+        termEqual (Comb f xs) (Comb g ys) = (f == g) && (listEqual xs ys) where
+            listEqual :: [Term] -> [Term] -> Bool
+            listEqual (te:tes) (t:ts) = (termEqual te t) && (listEqual tes t)
+            listEqual [] [] = True
+            listEqual _ _ = False
+        termEqual _ _ = False
+
 one_solution :: Strategy -> Peano -> Peano -> Bool
 one_solution strat x y = case solve strat peanoProgram (Goal [(Comb "add" [(peanoToTerm x) ,(peanoToTerm y), (Var "X")])]) of
     [(Subst [("X", term)])] -> case termToPeano term of
         Just p -> p == (addP x y)
         Nothing -> False
     _ -> False
-
 prop_dfs_one_solution = one_solution dfs
 prop_bfs_one_solution = one_solution bfs
 prop_idfs_one_solution = one_solution idfs
 
 
-twoVarsTerm :: Goal
-twoVarsTerm = case parse "=(A, B)" of
-    Right g -> g
-    _       -> error "HELP"
+twoVarsTerm = fromString "=(A, B)."
 unify_twoVars :: Strategy -> Bool
 unify_twoVars strat = case solve strat (Prog []) twoVarsTerm of
     [Subst [("A", (Var "B"))]] -> True
     [Subst [("B", (Var "A"))]] -> True
     _ -> False
-
 prop_dfs_unify_twoVars = unify_twoVars dfs
 prop_bfs_unify_twoVars = unify_twoVars bfs
 prop_idfs_unify_twoVars = unify_twoVars idfs
 
-occurTerm :: Goal
-occurTerm = case parse "=(A, f(A))" of
-    Right g -> g
-    _       -> error "HELP"
-unify_occur :: Strategy -> Bool
-unify_occur strat = case solve strat (Prog []) occurTerm of
+occurTerm = fromString "=(A, f(A))."
+prop_dfs_unify_occur    = testNoSolution occurTerm dfs
+prop_bfs_unify_occur    = testNoSolution occurTerm bfs
+prop_idfs_unify_occur   = testNoSolution occurTerm idfs
+
+firstEmpty = fromString "=(_, A)."
+prop_dfs_firstanonym = testIfEmpty firstEmpty dfs
+prop_bfs_firstanonym = testIfEmpty firstEmpty bfs
+prop_idfs_firstanonym = testIfEmpty firstEmpty idfs
+secondEmpty = fromString "=(A, _)."
+prop_dfs_secondanonym = testIfEmpty secondEmpty dfs
+prop_bfs_secondanonym = testIfEmpty secondEmpty bfs
+prop_idfs_secondanonym = testIfEmpty secondEmpty idfs
+bothEmpty = fromString "=(_,_)."
+prop_dfs_bothanonym = testIfEmpty bothEmpty dfs
+prop_bfs_bothanonym = testIfEmpty bothEmpty bfs
+prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
+
+
+testForSolution :: Goal -> Strategy -> [Subst] -> Bool
+testForSolution f strat subs = case solve strat (Prog []) g
+
+testNoSolution :: Goal -> Strategy -> Bool
+testIfEmpty g strat = case solve strat (Prog []) g of
     [] -> True
     _ -> False
 
-prop_dfs_unify_occur = unify_occur dfs
-prop_bfs_unify_occur = unify_occur bfs
-prop_idfs_unify_occur = unify_occur idfs
+testIfEmpty :: Goal -> Strategy -> Bool
+testIfEmpty g strat = case solve strat (Prog []) g of
+    [Subst []] -> True
+    _ -> False
 
 return []
 runTests = $quickCheckAll

@@ -138,4 +138,4 @@ idfs tree1 = idfsAcc 0 tree1 where
 
 -- solves a goal with a strategie using all rules from a program
 solve :: Strategy -> Prog -> Goal -> [Subst]
-solve s p g = s (sld s p g) 
+solve s p g = (fmap (simplify (allVars g))) (s (sld s p g))
