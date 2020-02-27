@@ -14,6 +14,12 @@ peanoProgram = case parse "add(o   ,Y,Y).\nadd(s(X),Y,s(Z)) :- add(X,Y,Z)." of
     Right p -> p
     _       -> Prog []
 
+listProgram :: Prog
+listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(R, L, RL).\nlast(L, E) :- append(_, [E], L).\nreverse([], []).\nreverse([E|R], L) :- reverse(R, UR), append(UR, [E], L).\nmember(E, [E|_]).\nmember(E, [_|R]) :- member(E,R).\nperm([], []).\nperm(L, [E|R]) :- delete(E, L, LwithoutE), perm(LwithoutE, R).\ndelete(E, L, R) :- append(L1, [E|L2], L), append(L1, L2, R).\nsort(L, S) :- perm(L, S), sorted(S).\nsorted([]).\nsorted([_]).\nsorted([E1|[E2|L]]) :- =<(E1, E2), sorted([E2|L]).\nlength([], 0).\nlength([_|Xs], N) :- length(Xs, N1), is(N, +(N1, 1)).\nlengthP([], o).\nlengthP([_|Xs], s(N)) :- lengthP(Xs, N)." of
+    Right p -> p
+    _       -> Prog []
+
+
 intToPeano :: Int -> Peano
 intToPeano x | x <= 0  = O
              | x > 0   = S (intToPeano (x-1))
@@ -51,6 +57,9 @@ prop_one_solution x y = case solve dfs peanoProgram (Goal [(Comb "add" [(peanoTo
         Just p -> p == (addP x y)
         Nothing -> False
     _ -> False
+
+prop_append1_dfs :: Bool
+prop_append1_dfs solve dfs 
 
 return []
 runTests = $quickCheckAll
