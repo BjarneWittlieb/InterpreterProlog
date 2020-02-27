@@ -157,8 +157,8 @@ prop_idfs_unify_complicated1 = testForSoltionLength (Prog []) complicated1 idfs 
 
 complicated2 = fromString "=(p(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R),p(f(B,B),f(C,C),f(D,D),f(E,E),f(F,F),f(G,G),f(H,H),f(I,I),f(J,J),f(K,K),f(L,L),f(M,M),f(N,N),f(O,O),f(P,P),f(Q,Q),f(R,R),f(S,S)))."
 prop_dfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 dfs 1
---prop_bfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 bfs 1
---prop_idfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 idfs 1
+prop_bfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 bfs 1
+prop_idfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 idfs 1
 
 -- This takes far too long
 -- complicated3 = fromString "=(p(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y),p(f(B,B),f(C,C),f(D,D),f(E,E),f(F,F),f(G,G),f(H,H),f(I,I),f(J,J),f(K,K),f(L,L),f(M,M),f(N,N),f(O,O),f(P,P),f(Q,Q),f(R,R),f(S,S),f(T,T),f(U,U),f(V,V),f(W,W),f(X,X),f(Y,Y),f(Z,Z)))."
