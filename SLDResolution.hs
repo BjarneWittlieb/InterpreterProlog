@@ -121,7 +121,7 @@ bfs tree = concat (runRepeatState (not.null) (\_ -> st) [] [([], tree)]) where
     oneStep ((s, Node (Goal []) []):xs) = let (x, y) = oneStep xs in ((foldr (\(vs, s1) s2 -> restrictTo vs (repComp s1 s2)) empty (reverse s)):x, y)
     oneStep ((s, Node goal xs):ys) = let (x, y) = oneStep ys in (x, (fmap (\(a, b) -> ((allVars goal, a):s, b)) xs) ++ y)
 
--- iterative depth-first search
+-- iterative deepening depth-first search
 idfs :: Strategy
 idfs tree1 = idfsAcc 0 tree1 where
   idfsAcc :: Int -> Strategy
