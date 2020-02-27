@@ -100,7 +100,7 @@ eqSubsts g s1 s2 = let vs = allVars g in
 -- Tests whether the solve returns expted list of substitutoins
 -- The substitions have to be in right order, though they will be normified
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
-testForSolution p g strat subs = eqSubsts g (solve staht p g) subs
+testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
 
 -- Testcase for checking whether the first substituions of the solve are equal to the tested substitutions
 -- Especially useful for cases where there are infinite solutions
