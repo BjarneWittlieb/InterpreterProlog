@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 
@@ -6,7 +8,9 @@ import SLDResolution
 import Parser
 import Substitutions
 import Prettyprinting
+
 import System.IO
+
 
 -- Welcomes the User and loops
 main :: IO ()
@@ -34,6 +38,8 @@ main = do
     putStrLn "        Nc  ............................. .kMMMM\n\n"
     -- Start with empty programm
     loop (Prog []) dfs
+
+
 
 -- Now File stands for the currently loaded program
 
@@ -63,6 +69,8 @@ process file strat cmd        = do
             goThroughSubs (solve strat file goal)
             loop file strat
 
+-- Goes through a list of substitutions where the next can be seen with ';'
+-- The user can return to the main loop with '.
 goThroughSubs :: [Subst] -> IO ()
 -- if there are no more substitutions, output 'false'
 goThroughSubs [] = do
@@ -99,6 +107,7 @@ parseLine _ _ = do
     return ()
     
 
+-- Processes a command that startet with :
 processCommand :: Prog -> Strategy -> String -> IO ()
 
 -- Help window

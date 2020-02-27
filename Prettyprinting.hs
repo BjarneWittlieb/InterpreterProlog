@@ -8,7 +8,6 @@ class Pretty a where
   pretty :: a -> String
 
 
--- TODO zweistellige prädikate korrekt verarbeiten
 instance Pretty Term where
   -- if the Term is a Var, just return the varName
   pretty (Var v) = v
