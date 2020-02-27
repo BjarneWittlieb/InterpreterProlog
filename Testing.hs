@@ -12,9 +12,7 @@ import Prettyprinting
 import Unification
 import Vars
 
-data Peano = O | S Peano deriving Show
-
-
+-- This is just useful
 instance Parse Term where
     parse "[]" = Right (Comb "[]" [])
     parse string = case parse (string ++ ".") :: Either String Goal of
@@ -22,10 +20,6 @@ instance Parse Term where
         Left str -> Left str
         _ -> Left "Something went horribly wrong here."
 
-peanoProgram :: Prog
-peanoProgram = case parse "add(o   ,Y,Y).\nadd(s(X),Y,s(Z)) :- add(X,Y,Z)." of
-    Right p -> p
-    _       -> Prog []
 
 listProgram :: Prog
 listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(R, L, RL).\nlast(L, E) :- append(_, [E], L).\nreverse([], []).\nreverse([E|R], L) :- reverse(R, UR), append(UR, [E], L).\nmember(E, [E|_]).\nmember(E, [_|R]) :- member(E,R).\nperm([], []).\nperm(L, [E|R]) :- delete(E, L, LwithoutE), perm(LwithoutE, R).\ndelete(E, L, R) :- append(L1, [E|L2], L), append(L1, L2, R).\nsort(L, S) :- perm(L, S), sorted(S).\nsorted([]).\nsorted([_]).\nsorted([E1|[E2|L]]) :- =<(E1, E2), sorted([E2|L]).\nlength([], 0).\nlength([_|Xs], N) :- length(Xs, N1), is(N, +(N1, 1)).\nlengthP([], o).\nlengthP([_|Xs], s(N)) :- lengthP(Xs, N)." of
@@ -33,27 +27,7 @@ listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(
     _       -> Prog []
 
 
-intToPeano :: Int -> Peano
-intToPeano x | x <= 0  = O
-             | x > 0   = S (intToPeano (x-1))
-
-addP :: Peano -> Peano -> Peano
-addP O x     = x
-addP (S y) x = S (addP y x)
-
-peanoToInt :: Peano -> Int
-peanoToInt O     = 0
-peanoToInt (S p) = 1 + (peanoToInt p)
-
-peanoToTerm :: Peano -> Term
-peanoToTerm O     = Comb "o" []
-peanoToTerm (S p) = Comb "s" [(peanoToTerm p)]
-
-termToPeano :: Term -> Maybe Peano
-termToPeano (Comb "o" [])   = Just O
-termToPeano (Comb "s" [x])  = (termToPeano x) >>= (Just . S)
-termToPeano _               = Nothing
-
+-- Fast helper Functions for parsing (which are just more convinient if you know what you are doing)
 fromString :: String -> Goal
 fromString s = case parse s of
     Right g -> g
@@ -67,6 +41,8 @@ substFromStrings strList = Subst (fmap tupleFromString strList) where
             Right term  -> (strTrim (fst tuple), term)
             _           -> error "Parse error!"
 
+
+-- String helper Functions for the Substitutions pseudo parser
 strBreak :: Char -> String -> (String , String)
 strBreak c toSplit = (span (/= c) toSplit)
 
@@ -82,15 +58,7 @@ strTrim "" = ""
 strTrim (' ':str) = strTrim str
 strTrim (c:str) = c:(strTrim str)
 
-instance Arbitrary Peano where
-    arbitrary = do
-        ranInt <- arbitrary
-        return (intToPeano ranInt)
 
-instance Eq Peano where
-    O == O          = True
-    (S x) == (S y)  = x == y
-    _ == _          = False
 
 instance Eq Subst where
     s1 == s2 = (pretty s1) == (pretty s2)
@@ -110,18 +78,26 @@ eqSubsts :: Goal -> [Subst] -> [Subst] -> Bool
 eqSubsts g s1 s2 = let vs = allVars g in
  (length s1 == length s2) && foldr (&&) True (fmap (\(x, y) -> (normify vs (Subst x)) == (normify vs (Subst y))) (zip (fmap (fromSubst) s1) (fmap (fromSubst) s2)))
 
-one_solution :: Strategy -> Peano -> Peano -> Bool
-one_solution strat x y = case solve strat peanoProgram (Goal [(Comb "add" [(peanoToTerm x) ,(peanoToTerm y), (Var "X")])]) of
-    [(Subst [("X", term)])] -> case termToPeano term of
-        Just p -> p == (addP x y)
-        Nothing -> False
+
+-- Helper Functions for certain solution testing
+testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
+testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
+
+testNoSolution :: Goal -> Strategy -> Bool
+testNoSolution g strat = case solve strat (Prog []) g of
+    [] -> True
     _ -> False
 
+testIfEmpty :: Goal -> Strategy -> Bool
+testIfEmpty g strat = case solve strat (Prog []) g of
+    [Subst []] -> True
+    _ -> False
 
-prop_dfs_one_solution = one_solution dfs
-prop_bfs_one_solution = one_solution bfs
-prop_idfs_one_solution = one_solution idfs
+{-
 
+Testing functions for the unification algorithm.
+
+ -}
 
 twoVarsTerm = fromString "=(A, B)."
 unify_twoVars :: Strategy -> Bool
@@ -152,22 +128,22 @@ prop_bfs_bothanonym = testIfEmpty bothEmpty bfs
 prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
 
 multSubs = fromString "=(f(A,B),f(f(C),g(D)))."
--- prop_dfs_multiplesubs = testForSolution (Prog []) multSubs dfs [(Subst [("A", (Comb "f" [(Var "C")])), ("B")])]
+expectedMultSubs = [substFromStrings ["A -> f(C)", "B -> g(D)"]]
+prop_dfs_multiplesubs = testForSolution (Prog []) multSubs dfs expectedMultSubs
+prop_bfs_multiplesubs = testForSolution (Prog []) multSubs bfs expectedMultSubs
+prop_idfs_multiplesubs = testForSolution (Prog []) multSubs idfs expectedMultSubs
 
+multSubsEmpty = fromString "=(f(_,_),f(f(C),g(D)))."
+prop_dfs_multiplesubsempty = testIfEmpty multSubsEmpty dfs
+prop_bfs_multiplesubsempty = testIfEmpty multSubsEmpty bfs
+prop_idfs_multiplesubsempty = testIfEmpty multSubsEmpty idfs
 
-testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
-testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
+multSubsDeeper = fromString "=(f(A,B),f(f(C),g(A)))."
+expectedMultSubsDeeper  = [substFromStrings ["A -> f(C)", "B -> g(f(C))"]]
+prop_dfs_multiplesubsdeep = testForSolution (Prog []) multSubsDeeper dfs expectedMultSubsDeeper
+prop_bfs_multiplesubsdeep = testForSolution (Prog []) multSubsDeeper bfs expectedMultSubsDeeper
+prop_idfs_multiplesubsdeep = testForSolution (Prog []) multSubsDeeper idfs expectedMultSubsDeeper
 
-
-testNoSolution :: Goal -> Strategy -> Bool
-testNoSolution g strat = case solve strat (Prog []) g of
-    [] -> True
-    _ -> False
-
-testIfEmpty :: Goal -> Strategy -> Bool
-testIfEmpty g strat = case solve strat (Prog []) g of
-    [Subst []] -> True
-    _ -> False
 
 subst_append1 = fmap substFromStrings [["Xs -> .(2,[])", "Ys -> .(1,[])"]]
 prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") dfs subst_append1
