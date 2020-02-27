@@ -82,13 +82,13 @@ eqSubsts g s1 s2 = let vs = allVars g in
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
 testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
 
-testNoSolution :: Goal -> Strategy -> Bool
-testNoSolution g strat = case solve strat (Prog []) g of
+testNoSolution :: Prog -> Goal -> Strategy -> Bool
+testNoSolution p g strat = case solve strat p g of
     [] -> True
     _ -> False
 
-testIfEmpty :: Goal -> Strategy -> Bool
-testIfEmpty g strat = case solve strat (Prog []) g of
+testIfEmpty :: Prog -> Goal -> Strategy -> Bool
+testIfEmpty p g strat = case solve strat p g of
     [Subst []] -> True
     _ -> False
 
@@ -109,40 +109,42 @@ prop_bfs_unify_twoVars = unify_twoVars bfs
 prop_idfs_unify_twoVars = unify_twoVars idfs
 
 occurTerm = fromString "=(A, f(A))."
-prop_dfs_unify_occur    = testNoSolution occurTerm dfs
-prop_bfs_unify_occur    = testNoSolution occurTerm bfs
-prop_idfs_unify_occur   = testNoSolution occurTerm idfs
+prop_dfs_unify_occur    = testNoSolution (Prog []) occurTerm dfs
+prop_bfs_unify_occur    = testNoSolution (Prog []) occurTerm bfs
+prop_idfs_unify_occur   = testNoSolution (Prog []) occurTerm idfs
 
 firstEmpty = fromString "=(_, A)."
-prop_dfs_firstanonym = testIfEmpty firstEmpty dfs
-prop_bfs_firstanonym = testIfEmpty firstEmpty bfs
-prop_idfs_firstanonym = testIfEmpty firstEmpty idfs
+prop_dfs_anonym1 = testIfEmpty (Prog []) firstEmpty dfs
+prop_bfs_anonym1 = testIfEmpty (Prog []) firstEmpty bfs
+prop_idfs_anonym1 = testIfEmpty (Prog []) firstEmpty idfs
 secondEmpty = fromString "=(A, _)."
-prop_dfs_secondanonym = testIfEmpty secondEmpty dfs
-prop_bfs_secondanonym = testIfEmpty secondEmpty bfs
-prop_idfs_secondanonym = testIfEmpty secondEmpty idfs
+prop_dfs_anonym2 = testIfEmpty (Prog []) secondEmpty dfs
+prop_bfs_anonym2 = testIfEmpty (Prog []) secondEmpty bfs
+prop_idfs_anonym2 = testIfEmpty (Prog []) secondEmpty idfs
 bothEmpty = fromString "=(_,_)."
-prop_dfs_bothanonym = testIfEmpty bothEmpty dfs
-prop_bfs_bothanonym = testIfEmpty bothEmpty bfs
-prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
+prop_dfs_anonym3 = testIfEmpty (Prog []) bothEmpty dfs
+prop_bfs_anonym3 = testIfEmpty (Prog []) bothEmpty bfs
+prop_idfs_anonym3 = testIfEmpty (Prog []) bothEmpty idfs
 
 multSubs = fromString "=(f(A,B),f(f(C),g(D)))."
 expectedMultSubs = [substFromStrings ["A -> f(C)", "B -> g(D)"]]
-prop_dfs_multiplesubs = testForSolution (Prog []) multSubs dfs expectedMultSubs
-prop_bfs_multiplesubs = testForSolution (Prog []) multSubs bfs expectedMultSubs
-prop_idfs_multiplesubs = testForSolution (Prog []) multSubs idfs expectedMultSubs
+prop_dfs_multiplesubs1 = testForSolution (Prog []) multSubs dfs expectedMultSubs
+prop_bfs_multiplesubs1 = testForSolution (Prog []) multSubs bfs expectedMultSubs
+prop_idfs_multiplesubs1 = testForSolution (Prog []) multSubs idfs expectedMultSubs
 
 multSubsEmpty = fromString "=(f(_,_),f(f(C),g(D)))."
-prop_dfs_multiplesubsempty = testIfEmpty multSubsEmpty dfs
-prop_bfs_multiplesubsempty = testIfEmpty multSubsEmpty bfs
-prop_idfs_multiplesubsempty = testIfEmpty multSubsEmpty idfs
+prop_dfs_multiplesubs_empty = testIfEmpty (Prog []) multSubsEmpty dfs
+prop_bfs_multiplesubs_empty = testIfEmpty (Prog []) multSubsEmpty bfs
+prop_idfs_multiplesubs_empty = testIfEmpty (Prog []) multSubsEmpty idfs
 
 multSubsDeeper = fromString "=(f(A,B),f(f(C),g(A)))."
 expectedMultSubsDeeper  = [substFromStrings ["A -> f(C)", "B -> g(f(C))"]]
-prop_dfs_multiplesubsdeep = testForSolution (Prog []) multSubsDeeper dfs expectedMultSubsDeeper
-prop_bfs_multiplesubsdeep = testForSolution (Prog []) multSubsDeeper bfs expectedMultSubsDeeper
-prop_idfs_multiplesubsdeep = testForSolution (Prog []) multSubsDeeper idfs expectedMultSubsDeeper
+prop_dfs_multiplesubs2 = testForSolution (Prog []) multSubsDeeper dfs expectedMultSubsDeeper
+prop_bfs_multiplesubs2 = testForSolution (Prog []) multSubsDeeper bfs expectedMultSubsDeeper
+prop_idfs_multiplesubs2 = testForSolution (Prog []) multSubsDeeper idfs expectedMultSubsDeeper
 
+noSolution1 = fromString "=(f(A,B),g(C,D))."
+prop_dfs_nosolution1 = testNoSolution (Prog []) fromString dfs
 
 
 subst_append1 = [Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])]]
