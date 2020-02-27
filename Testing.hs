@@ -21,9 +21,6 @@ instance Parse Term where
         _ -> Left "Something went horribly wrong here."
 
 
-
-
-
 -- Fast helper Functions for parsing (which are just more convinient if you know what you are doing)
 fromString :: String -> Goal
 fromString s = case parse s of
@@ -294,8 +291,26 @@ prop_idfs_arithmecy_factorial3 = testForSolution arithmecyProgram factorial3 idf
 Testing the List cases.
 
 -}
-listProgram :: Prog
-listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(R, L, RL).\nlast(L, E) :- append(_, [E], L).\nreverse([], []).\nreverse([E|R], L) :- reverse(R, UR), append(UR, [E], L).\nmember(E, [E|_]).\nmember(E, [_|R]) :- member(E,R).\nperm([], []).\nperm(L, [E|R]) :- delete(E, L, LwithoutE), perm(LwithoutE, R).\ndelete(E, L, R) :- append(L1, [E|L2], L), append(L1, L2, R).\nsort(L, S) :- perm(L, S), sorted(S).\nsorted([]).\nsorted([_]).\nsorted([E1|[E2|L]]) :- =<(E1, E2), sorted([E2|L]).\nlength([], 0).\nlength([_|Xs], N) :- length(Xs, N1), is(N, +(N1, 1)).\nlengthP([], o).\nlengthP([_|Xs], s(N)) :- lengthP(Xs, N)." of
+listString = "append([], L, L).\n" ++
+    "append([E|R], L, [E|RL]) :- append(R, L, RL).\n" ++
+    "last(L, E) :- append(_, [E], L).\n" ++
+    "reverse([], []).\n" ++
+    "reverse([E|R], L) :- reverse(R, UR), append(UR, [E], L).\n" ++
+    "member(E, [E|_]).\n" ++
+    "member(E, [_|R]) :- member(E,R).\n" ++
+    "perm([], []).\n" ++
+    "perm(L, [E|R]) :- delete(E, L, LwithoutE), perm(LwithoutE, R).\n" ++
+    "delete(E, L, R) :- append(L1, [E|L2], L), append(L1, L2, R).\n" ++
+    "sort(L, S) :- perm(L, S), sorted(S).\nsorted([]).\n" ++
+    "sorted([_]).\n" ++
+    "sorted([E1|[E2|L]]) :- =<(E1, E2), sorted([E2|L]).\n" ++
+    "length([], 0).\n" ++
+    "length([_|Xs], N) :- length(Xs, N1), is(N, +(N1, 1)).\n" ++
+    "lengthP([], o).\n" ++
+    "lengthP([_|Xs], s(N)) :- lengthP(Xs, N)."
+
+listProgram :: Prog 
+listProgram = case parse listString of
     Right p -> p
     _       -> Prog []
 
@@ -378,8 +393,27 @@ prop_idfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o)))
 Testing the Higher order terms using familyProgram.
 
 -}
+familyString = "ehemann(christine, heinz).\n" ++
+    "ehemann(maria, fritz).\n" ++
+    "ehemann(monika, herbert).\n" ++
+    "ehemann(angelika, hubert).\n" ++
+    "mutter(herbert, christine).\n" ++
+    "mutter(angelika, christine).\n" ++
+    "mutter(hubert, maria).\n" ++
+    "mutter(susanne, monika).\n" ++
+    "mutter(norbert, monika).\n" ++
+    "mutter(andreas, angelika).\n" ++
+    "vater(K, V) :- ehemann(M, V), mutter(K, M).\n" ++
+    "elter(K, E) :- vater(K, E).\n" ++
+    "elter(K, E) :- mutter(K, E).\n" ++
+    "grossvater(E, G) :- elter(E, F), vater(F, G).\n" ++
+    "grossvaeter(Gs) :- findall([E, G], grossvater(E, G), Gs).\n" ++
+    "vorfahre(N, V) :- vorfahre(N, V2), vorfahre(V2, V).\n" ++
+    "vorfahre(N, V) :- elter(N, V).\n" ++
+    "geschwister(S, P) :- mutter(S, M), mutter(P,M), \\+(=(P, S))."
+
 familyProgram:: Prog
-familyProgram = case parse "ehemann(christine, heinz).\nehemann(maria, fritz).\nehemann(monika, herbert).\nehemann(angelika, hubert).\nmutter(herbert, christine).\nmutter(angelika, christine).\nmutter(hubert, maria).\nmutter(susanne, monika).\nmutter(norbert, monika).\nmutter(andreas, angelika).\nvater(K, V) :- ehemann(M, V), mutter(K, M).\nelter(K, E) :- vater(K, E).\nelter(K, E) :- mutter(K, E).\ngrossvater(E, G) :- elter(E, F), vater(F, G).\ngrossvaeter(Gs) :- findall([E, G], grossvater(E, G), Gs).\nvorfahre(N, V) :- vorfahre(N, V2), vorfahre(V2, V).\nvorfahre(N, V) :- elter(N, V).\ngeschwister(S, P) :- mutter(S, M), mutter(P,M), \\+(=(P, S))." of
+familyProgram = case parse familyString of
     Right p -> p
     _       -> Prog []
 
