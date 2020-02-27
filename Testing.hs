@@ -6,9 +6,17 @@ import Data.List
 import SLDResolution
 import Substitutions
 import Type
+import Prettyprinting
 import Parser
 
 data Peano = O | S Peano deriving Show
+
+
+instance Parse Term where
+    parse string = case parse (string ++ ".") :: Either String Goal of
+        Right (Goal [term]) -> Right term
+        Left str -> Left str
+        _ -> Left "Something went horribly wrong here."
 
 peanoProgram :: Prog
 peanoProgram = case parse "add(o   ,Y,Y).\nadd(s(X),Y,s(Z)) :- add(X,Y,Z)." of
@@ -46,6 +54,29 @@ fromString :: String -> Goal
 fromString s = case parse s of
     Right g -> g
     _       -> error "Parse error!"
+
+substFromString :: [String] -> Subst
+substFromString strList = Subst (fmap tupleFromString strList) where
+    tupleFromString:: String -> (VarName, Term)
+    tupleFromString str = let tuple = strSplit "->" str in
+        case parse (strTrim (snd tuple)) of
+            Right term  -> (strTrim (fst tuple), term)
+            _           -> error "Parse error!"
+
+strBreak :: Char -> String -> (String , String)
+strBreak c toSplit = (span (/= c) toSplit)
+
+strSplit :: String -> String -> (String , String)
+strSplit splitter toSplit = case stripPrefix splitter (snd break) of
+    Just str -> (fst break, str)
+    _ -> (toSplit, "")
+    where
+        break = strBreak (splitter!!0) toSplit
+
+strTrim :: String -> String
+strTrim "" = ""
+strTrim (' ':str) = strTrim str
+strTrim (c:str) = c:(strTrim str)
 
 instance Arbitrary Peano where
     arbitrary = do
@@ -113,6 +144,8 @@ prop_dfs_bothanonym = testIfEmpty bothEmpty dfs
 prop_bfs_bothanonym = testIfEmpty bothEmpty bfs
 prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
 
+multSubs = fromString "=(f(A,B),f(f(C),g(D)))."
+-- prop_dfs_multiplesubs = testForSolution (Prog []) multSubs dfs [(Subst [("A", (Comb "f" [(Var "C")])), ("B")])]
 
 
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
