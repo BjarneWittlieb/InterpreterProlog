@@ -11,7 +11,7 @@ ghc -Wall Main.hs -odir bin -hidir bin
 
 Make sure to have a bin folder in the main directory if you want to locate all compiled files there.
 
-## Bash methods
+## Repl methods
 When running the interactive environment, the following methods are supported:
 
 ```:h``` for showing a help window with this list of commands.
