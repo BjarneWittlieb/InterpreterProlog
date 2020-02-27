@@ -79,6 +79,7 @@ strTrimEnd str = reverse (strTrimBegin (reverse str))
 instance Eq Subst where
     s1 == s2 = (pretty s1) == (pretty s2)
 
+-- converts a substitution into a standartized form
 normify :: [VarName] -> Subst -> Subst
 normify vs s = let s' = simplify vs (repeatSubst s) in order2 (renameSubst vs (order2 (applySub (order1 vs s') s'))) where 
   order1 :: [VarName] -> Subst -> Subst
@@ -90,6 +91,8 @@ normify vs s = let s' = simplify vs (repeatSubst s) in order2 (renameSubst vs (o
   order2 (Subst ((v, t):xs)) = Subst ((fromSubst (order2 (Subst (filter (\(x, _) -> x < v) xs)))) ++
    (v, t):(fromSubst (order2 (Subst (filter (\(x, _) -> x > v) xs)))))
 
+
+-- checks, if the normified versions of the corresponding substitutions in the lists are equal
 eqSubsts :: Goal -> [Subst] -> [Subst] -> Bool
 eqSubsts g s1 s2 = let vs = allVars g in
  (length s1 == length s2) && foldr (&&) True (fmap (\(x, y) -> (normify vs (Subst x)) == (normify vs (Subst y))) (zip (fmap (fromSubst) s1) (fmap (fromSubst) s2)))

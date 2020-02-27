@@ -29,5 +29,6 @@ unify t1 t2 = case (ds t1 t2) of
     Just (Var v, q) -> let sub = single v q in fmap (repComp sub) (unify (apply sub t1) (apply sub t2))
     Just _ -> Nothing
 
+-- substitutes variables in a substitution
 applySub :: Subst -> Subst -> Subst
 applySub s (Subst ys) = foldr repComp empty (catMaybes (fmap (\(v, t) -> (uncurry unify) (apply s (Var v), apply s t)) ys))

@@ -13,6 +13,7 @@ instance Pretty Term where
   pretty (Var v) = v
   -- if the Term is a constant, return it
   pretty (Comb c []) = c
+  -- if the terms starts with a "." CombName with two arguments, it's a list
   pretty (Comb "." [a, b]) = "[" ++ (intercalate ", " (toList (a, b))) ++ "]" where
     toList :: (Term, Term) -> [String]
     toList (x, Comb "[]" []) = [pretty x]
