@@ -7,6 +7,9 @@ import SLDResolution
 import Substitutions
 import Type
 import Parser
+import Prettyprinting
+import Unification
+import Vars
 
 data Peano = O | S Peano deriving Show
 
@@ -58,21 +61,22 @@ instance Eq Peano where
     _ == _          = False
 
 instance Eq Subst where
-    (Subst xs) == (Subst ys) = (subset xs ys) && (subset ys xs) where
-        subset :: [(VarName, Term)] -> [(VarName, Term)] -> Bool
-        subset [] _         = True
-        subset (h:hs) other = (contains h other) && (subset hs other)
-        contains :: (VarName, Term) -> [(VarName, Term)] -> Bool
-        contains _ [] = False
-        contains (v, t) ((v2, t2):xs) = (v == v2) && (termEqual t t2)
-        termEqual :: Term -> Term -> Bool
-        termEqual (Var x) (Var y) = (x == y)
-        termEqual (Comb f xs) (Comb g ys) = (f == g) && (listEqual xs ys) where
-            listEqual :: [Term] -> [Term] -> Bool
-            listEqual (te:tes) (t:ts) = (termEqual te t) && (listEqual tes ts)
-            listEqual [] [] = True
-            listEqual _ _ = False
-        termEqual _ _ = False
+    s1 == s2 = (pretty s1) == (pretty s2)
+
+normify :: [VarName] -> Subst -> Subst
+normify vs s = let s' = simplify vs (repeatSubst s) in order2 (renameSubst vs (order2 (applySub (order1 vs s') s'))) where 
+  order1 :: [VarName] -> Subst -> Subst
+  order1 v (Subst []) = empty
+  order1 v' (Subst ((v, Var w):xs)) | (elem w v') && v > w = Subst ((v, Var w):((w, Var v):(fromSubst (order1 v' (Subst xs)))))
+  order1 v (Subst (x:xs)) = order1 v (Subst xs)
+  order2 :: Subst -> Subst
+  order2 (Subst []) = empty
+  order2 (Subst ((v, t):xs)) = Subst ((fromSubst (order2 (Subst (filter (\(x, _) -> x < v) xs)))) ++
+   (v, t):(fromSubst (order2 (Subst (filter (\(x, _) -> x > v) xs)))))
+
+eqSubsts :: Goal -> [Subst] -> [Subst] -> Bool
+eqSubsts g s1 s2 = let vs = allVars g in
+ (length s1 == length s2) && foldr (&&) True (fmap (\(x, y) -> (normify vs (Subst x)) == (normify vs (Subst y))) (zip (fmap (fromSubst) s1) (fmap (fromSubst) s2)))
 
 one_solution :: Strategy -> Peano -> Peano -> Bool
 one_solution strat x y = case solve strat peanoProgram (Goal [(Comb "add" [(peanoToTerm x) ,(peanoToTerm y), (Var "X")])]) of
@@ -80,6 +84,8 @@ one_solution strat x y = case solve strat peanoProgram (Goal [(Comb "add" [(pean
         Just p -> p == (addP x y)
         Nothing -> False
     _ -> False
+
+
 prop_dfs_one_solution = one_solution dfs
 prop_bfs_one_solution = one_solution bfs
 prop_idfs_one_solution = one_solution idfs
@@ -116,7 +122,7 @@ prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
 
 
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
-testForSolution p g strat subs = (solve strat p g) == subs
+testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
 
 
 testNoSolution :: Goal -> Strategy -> Bool
@@ -129,15 +135,19 @@ testIfEmpty g strat = case solve strat (Prog []) g of
     [Subst []] -> True
     _ -> False
 
--- prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") dfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
--- prop_bfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") bfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
--- prop_idfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") idfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
 
-subst_append2 = "{X -> [], Y -> [1, 2]}",
-% "{X -> [1], Y -> [2]}", and "{X -> [1, 2], Y -> []}".
-prop_dfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." dfs subst_append2)
-prop_bfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." bfs subst_append2)
-prop_idfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." idfs subst_append2)
+subst_append1 = [Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])]]
+prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") dfs subst_append1
+prop_bfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") bfs subst_append1
+prop_idfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") idfs subst_append1
+
+--subst_append2 = [Subst [("X", Comb "[]" []), ("Y", Comb "." [Comb "1" [], Comb "." [Comb "2" [], Comb "[]" []]])],
+--  Subst [("X", Comb "." [Comb "1" [], Comb "[]" []]), ("Y", Comb "." [Comb "2" [], Comb "[]" []])]
+--"{X -> [], Y -> [1, 2]}",
+-- % "{X -> [1], Y -> [2]}", and "{X -> [1, 2], Y -> []}".
+-- prop_dfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." dfs subst_append2)
+-- prop_bfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." bfs subst_append2)
+-- prop_idfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." idfs subst_append2)
 
 
 

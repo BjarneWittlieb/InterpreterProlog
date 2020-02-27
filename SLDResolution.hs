@@ -1,4 +1,4 @@
-module SLDResolution(Strategy, SLDTree, dfs, bfs, idfs, solve, simplify, sld) where
+module SLDResolution(Strategy, SLDTree, dfs, bfs, idfs, solve, simplify, sld, renameSubst) where
 -- NOT exporting the SLDTree constructor, cause it doesnt matter
 
 import Type
@@ -98,8 +98,9 @@ simplify vars s = restrictTo vars (renameSubst vars (fst (runState (repeatState 
     g (Subst []) = (sub, empty)
     g (Subst ((v, Var w):xs)) | not (elem w vs) = (applySub (single w (Var v)) sub, applySub (single w (Var v)) (Subst xs))
     g (Subst (_:xs)) = (sub, Subst xs)
-  renameSubst :: [VarName] -> Subst -> Subst
-  renameSubst vs sub = applySub (Subst (zip v (fmap (\x -> Var x) subVars))) sub where
+
+renameSubst :: [VarName] -> Subst -> Subst
+renameSubst vs sub = applySub (Subst (zip v (fmap (\x -> Var x) subVars))) sub where
     v = filter (\x -> not (elem x vs)) (allVars sub)
     subVars = take (length v) (filter (\x -> not (elem x vs)) freshVars)
 
