@@ -16,6 +16,7 @@ data Peano = O | S Peano deriving Show
 
 
 instance Parse Term where
+    parse "[]" = Right (Comb "[]" [])
     parse string = case parse (string ++ ".") :: Either String Goal of
         Right (Goal [term]) -> Right term
         Left str -> Left str
@@ -58,8 +59,8 @@ fromString s = case parse s of
     Right g -> g
     _       -> error "Parse error!"
 
-substFromString :: [String] -> Subst
-substFromString strList = Subst (fmap tupleFromString strList) where
+substFromStrings :: [String] -> Subst
+substFromStrings strList = Subst (fmap tupleFromString strList) where
     tupleFromString:: String -> (VarName, Term)
     tupleFromString str = let tuple = strSplit "->" str in
         case parse (strTrim (snd tuple)) of
@@ -168,21 +169,25 @@ testIfEmpty g strat = case solve strat (Prog []) g of
     [Subst []] -> True
     _ -> False
 
-
-subst_append1 = [Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])]]
+subst_append1 = fmap substFromStrings [["Xs -> .(2,[])", "Ys -> .(1,[])"]]
 prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") dfs subst_append1
 prop_bfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") bfs subst_append1
 prop_idfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") idfs subst_append1
 
---subst_append2 = [Subst [("X", Comb "[]" []), ("Y", Comb "." [Comb "1" [], Comb "." [Comb "2" [], Comb "[]" []]])],
---  Subst [("X", Comb "." [Comb "1" [], Comb "[]" []]), ("Y", Comb "." [Comb "2" [], Comb "[]" []])]
---"{X -> [], Y -> [1, 2]}",
--- % "{X -> [1], Y -> [2]}", and "{X -> [1, 2], Y -> []}".
--- prop_dfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." dfs subst_append2)
--- prop_bfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." bfs subst_append2)
--- prop_idfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." idfs subst_append2)
+subst_append2 = fmap substFromStrings [["X -> []", "Y -> .(1, [2])"], ["X -> .(1,[])", "Y -> .(2,[])"],["X -> .(1, [2])", "Y -> []"]]
+prop_dfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2]).") dfs subst_append2
+prop_bfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2]).") bfs subst_append2
+prop_idfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2]).") idfs subst_append2
 
+subst_append3 = fmap substFromStrings [[],[],[]]
+prop_dfs_append3 = testForSolution listProgram (fromString "append(_,_,[1,2]).") dfs subst_append3
+prop_bfs_append3 = testForSolution listProgram (fromString "append(_,_,[1,2]).") bfs subst_append3
+prop_idfs_append3 = testForSolution listProgram (fromString "append(_,_,[1,2]).") idfs subst_append3
 
+subst_last = fmap substFromStrings [["X -> 3"]]
+prop_dfs_last = testForSolution listProgram (fromString "last([1,2,3],X).") dfs subst_last
+prop_bfs_last = testForSolution listProgram (fromString "last([1,2,3],X).") bfs subst_last
+prop_idfs_last = testForSolution listProgram (fromString "last([1,2,3],X).") idfs subst_last
 
 return []
 runTests = $quickCheckAll
