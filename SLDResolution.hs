@@ -36,7 +36,7 @@ sld strategy program finalGoal = resolution (filter (\x -> not (elem x (allVars 
                                                               _ -> []
         -- Higher order term 'findall'
         applyRules vs stra p (Goal ((Comb "findall" [x, y, z]):ts)) = 
-          case unify z (listToTerm (fmap (((flip apply) x).(simplify (allVars (Goal [x, y, z])))) (solve stra p (Goal [Comb "call" [y]])))) of
+          case unify z (listToTerm (fmap ((flip apply) x) (solve stra p (Goal [Comb "call" [y]])))) of
             Nothing -> []
             Just s -> [(s, resolution vs stra p (apply s (Goal ts)))]  
         -- The evalutaion of terms 'is'
@@ -138,4 +138,4 @@ idfs tree1 = idfsAcc 0 tree1 where
 
 -- solves a goal with a strategie using all rules from a program
 solve :: Strategy -> Prog -> Goal -> [Subst]
-solve s p g = (fmap (simplify (allVars g))) (s (sld s p g))
+solve s p g = fmap (simplify (allVars g)) (s (sld s p g)) 
