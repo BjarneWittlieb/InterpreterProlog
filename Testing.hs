@@ -21,19 +21,9 @@ instance Parse Term where
         _ -> Left "Something went horribly wrong here."
 
 
-<<<<<<< HEAD
-listProgram :: Prog
-listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(R, L, RL).\nlast(L, E) :- append(_, [E], L).\nreverse([], []).\nreverse([E|R], L) :- reverse(R, UR), append(UR, [E], L).\nmember(E, [E|_]).\nmember(E, [_|R]) :- member(E,R).\nperm([], []).\nperm(L, [E|R]) :- delete(E, L, LwithoutE), perm(LwithoutE, R).\ndelete(E, L, R) :- append(L1, [E|L2], L), append(L1, L2, R).\nsort(L, S) :- perm(L, S), sorted(S).\nsorted([]).\nsorted([_]).\nsorted([E1|[E2|L]]) :- =<(E1, E2), sorted([E2|L]).\nlength([], 0).\nlength([_|Xs], N) :- length(Xs, N1), is(N, +(N1, 1)).\nlengthP([], o).\nlengthP([_|Xs], s(N)) :- lengthP(Xs, N)." of
-    Right p -> p
-    _       -> Prog []
 
-familyProgram:: Prog
-familyProgram = case parse "ehemann(christine, heinz).\nehemann(maria, fritz).\nehemann(monika, herbert).\nehemann(angelika, hubert).\nmutter(herbert, christine).\nmutter(angelika, christine).\nmutter(hubert, maria).\nmutter(susanne, monika).\nmutter(norbert, monika).\nmutter(andreas, angelika).\nvater(K, V) :- ehemann(M, V), mutter(K, M).\nelter(K, E) :- vater(K, E).\nelter(K, E) :- mutter(K, E).\ngrossvater(E, G) :- elter(E, F), vater(F, G).\ngrossvaeter(Gs) :- findall([E, G], grossvater(E, G), Gs).\nvorfahre(N, V) :- vorfahre(N, V2), vorfahre(V2, V).\nvorfahre(N, V) :- elter(N, V).\ngeschwister(S, P) :- mutter(S, M), mutter(P,M), \\+(=(P, S))." of
-    Right p -> p
-    _       -> Prog []
 
-=======
->>>>>>> 76cfc68fc6bdf4cb4cffac3e5a35d9c487f10820
+
 -- Fast helper Functions for parsing (which are just more convinient if you know what you are doing)
 fromString :: String -> Goal
 fromString s = case parse s of
@@ -90,19 +80,15 @@ eqSubsts g s1 s2 = let vs = allVars g in
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
 testForSolution p g strat subs = eqSubsts g (solve strat p g) subs
 
-<<<<<<< HEAD
+
 testForSolutionInf :: Prog -> Goal -> Strategy -> [Subst] -> Bool
 testForSolutionInf p g strat subs = eqSubsts g (take (length subs) (solve strat p g)) subs
 
-testNoSolution :: Goal -> Strategy -> Bool
-testNoSolution g strat = case solve strat (Prog []) g of
-=======
-testForSoltionLength :: Prog -> Goal -> Strategy -> Int -> Bool
-testForSoltionLength p g strat l = (length (solve strat p g)) == l
+testForSolutionLength :: Prog -> Goal -> Strategy -> Int -> Bool
+testForSolutionLength p g strat l = (length (solve strat p g)) == l
 
 testNoSolution :: Prog -> Goal -> Strategy -> Bool
 testNoSolution p g strat = case solve strat p g of
->>>>>>> 76cfc68fc6bdf4cb4cffac3e5a35d9c487f10820
     [] -> True
     _ -> False
 
@@ -173,20 +159,20 @@ prop_bfs_unify_nosolution2 = testNoSolution (Prog []) noSolution2 bfs
 prop_idfs_unify_nosolution2 = testNoSolution (Prog []) noSolution2 idfs
 
 complicated1 = fromString "=(p(A,B,C,D,E,F,G,H,I,J,K,L,M),p(f(B,B),f(C,C),f(D,D),f(E,E),f(F,F),f(G,G),f(H,H),f(I,I),f(J,J),f(K,K),f(L,L),f(M,M),f(N,N)))."
-prop_dfs_unify_complicated1 = testForSoltionLength (Prog []) complicated1 dfs 1
-prop_bfs_unify_complicated1 = testForSoltionLength (Prog []) complicated1 bfs 1
-prop_idfs_unify_complicated1 = testForSoltionLength (Prog []) complicated1 idfs 1
+prop_dfs_unify_complicated1 = testForSolutionLength (Prog []) complicated1 dfs 1
+prop_bfs_unify_complicated1 = testForSolutionLength (Prog []) complicated1 bfs 1
+prop_idfs_unify_complicated1 = testForSolutionLength (Prog []) complicated1 idfs 1
 
 complicated2 = fromString "=(p(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R),p(f(B,B),f(C,C),f(D,D),f(E,E),f(F,F),f(G,G),f(H,H),f(I,I),f(J,J),f(K,K),f(L,L),f(M,M),f(N,N),f(O,O),f(P,P),f(Q,Q),f(R,R),f(S,S)))."
-prop_dfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 dfs 1
-prop_bfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 bfs 1
-prop_idfs_unify_complicated2 = testForSoltionLength (Prog []) complicated2 idfs 1
+prop_dfs_unify_complicated2 = testForSolutionLength (Prog []) complicated2 dfs 1
+prop_bfs_unify_complicated2 = testForSolutionLength (Prog []) complicated2 bfs 1
+prop_idfs_unify_complicated2 = testForSolutionLength (Prog []) complicated2 idfs 1
 
 -- This takes far too long
 -- complicated3 = fromString "=(p(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y),p(f(B,B),f(C,C),f(D,D),f(E,E),f(F,F),f(G,G),f(H,H),f(I,I),f(J,J),f(K,K),f(L,L),f(M,M),f(N,N),f(O,O),f(P,P),f(Q,Q),f(R,R),f(S,S),f(T,T),f(U,U),f(V,V),f(W,W),f(X,X),f(Y,Y),f(Z,Z)))."
--- prop_dfs_unify_complicated3 = testForSoltionLength (Prog []) complicated3 dfs 1
--- prop_bfs_unify_complicated3 = testForSoltionLength (Prog []) complicated3 bfs 1
--- prop_idfs_unify_complicated3 = testForSoltionLength (Prog []) complicated3 idfs 1
+-- prop_dfs_unify_complicated3 = testForSolutionLength (Prog []) complicated3 dfs 1
+-- prop_bfs_unify_complicated3 = testForSolutionLength (Prog []) complicated3 bfs 1
+-- prop_idfs_unify_complicated3 = testForSolutionLength (Prog []) complicated3 idfs 1
 
 
 {-
@@ -205,9 +191,7 @@ prop_dfs_anonymous_solution = testForSolution anonymousProgram anonymousSolution
 prop_bfs_anonymous_solution = testForSolution anonymousProgram anonymousSolution bfs expectedAnanSol
 prop_idfs_anonymous_solution = testForSolution anonymousProgram anonymousSolution idfs expectedAnanSol
 
-<<<<<<< HEAD
-subst_append1 = fmap substFromStrings [["Xs -> .(2,[])", "Ys -> .(1,[])"]]
-=======
+
 anonymousBlank1 = fromString "p(_,_)."
 prop_dfs_anonymous_blank1 = testIfEmpty anonymousProgram anonymousBlank1 dfs
 prop_bfs_anonymous_blank1 = testIfEmpty anonymousProgram anonymousBlank1 bfs
@@ -289,8 +273,7 @@ listProgram = case parse "append([], L, L).\nappend([E|R], L, [E|RL]) :- append(
     Right p -> p
     _       -> Prog []
 
-subst_append1 = [Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])]]
->>>>>>> 76cfc68fc6bdf4cb4cffac3e5a35d9c487f10820
+subst_append1 = fmap substFromStrings [["Xs -> .(2,[])", "Ys -> .(1,[])"]]
 prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") dfs subst_append1
 prop_bfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") bfs subst_append1
 prop_idfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") idfs subst_append1
@@ -362,6 +345,11 @@ subst_lengthP = fmap substFromStrings [["Xs -> .(A,[B])"]]
 prop_dfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o))).") dfs subst_lengthP
 prop_bfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o))).") bfs subst_lengthP
 prop_idfs_lengthP = testForSolution listProgram (fromString "lengthP(Xs,s(s(o))).") idfs subst_lengthP
+
+familyProgram:: Prog
+familyProgram = case parse "ehemann(christine, heinz).\nehemann(maria, fritz).\nehemann(monika, herbert).\nehemann(angelika, hubert).\nmutter(herbert, christine).\nmutter(angelika, christine).\nmutter(hubert, maria).\nmutter(susanne, monika).\nmutter(norbert, monika).\nmutter(andreas, angelika).\nvater(K, V) :- ehemann(M, V), mutter(K, M).\nelter(K, E) :- vater(K, E).\nelter(K, E) :- mutter(K, E).\ngrossvater(E, G) :- elter(E, F), vater(F, G).\ngrossvaeter(Gs) :- findall([E, G], grossvater(E, G), Gs).\nvorfahre(N, V) :- vorfahre(N, V2), vorfahre(V2, V).\nvorfahre(N, V) :- elter(N, V).\ngeschwister(S, P) :- mutter(S, M), mutter(P,M), \\+(=(P, S))." of
+    Right p -> p
+    _       -> Prog []
 
 subst_vorfahre = fmap substFromStrings 
   [["X -> herbert", "Y -> christine"], ["X -> angelika", "Y -> christine"], ["X -> hubert", "Y -> maria"], ["X -> susanne", "Y -> monika"],
