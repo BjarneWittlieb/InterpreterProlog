@@ -81,6 +81,7 @@ eval (Comb "mod" [x, y]) = pure (mod) <*> (eval x) <*> (eval y)
 eval (Comb num []) = (readMaybe num) :: Maybe Integer
 eval _ = Nothing
 
+-- checks, if the string is a comparison function and returns the coresponding function
 isComparison :: String -> (Bool, Integer -> Integer -> Bool)
 isComparison "=:=" = (True, (==)) 
 isComparison "=\\=" = (True, (/=))
@@ -99,6 +100,7 @@ simplify vars s = restrictTo vars (renameSubst vars (fst (runState (repeatState 
     g (Subst ((v, Var w):xs)) | not (elem w vs) = (applySub (single w (Var v)) sub, applySub (single w (Var v)) (Subst xs))
     g (Subst (_:xs)) = (sub, Subst xs)
 
+-- renames the irrelevant variables in a substitution
 renameSubst :: [VarName] -> Subst -> Subst
 renameSubst vs sub = applySub (Subst (zip v (fmap (\x -> Var x) subVars))) sub where
     v = filter (\x -> not (elem x vs)) (allVars sub)
@@ -118,6 +120,7 @@ bfs :: Strategy
 bfs tree = concat (runRepeatState (not.null) (\_ -> st) [] [([], tree)]) where
   st :: State [([([VarName], Subst)], SLDTree)] [Subst]
   st = state oneStep where
+    -- does one step of the bfs
     oneStep [] = ([], [])
     oneStep ((s, Node (Goal []) []):xs) = let (x, y) = oneStep xs in ((foldr (\(vs, s1) s2 -> restrictTo vs (repComp s1 s2)) empty (reverse s)):x, y)
     oneStep ((s, Node goal xs):ys) = let (x, y) = oneStep ys in (x, (fmap (\(a, b) -> ((allVars goal, a):s, b)) xs) ++ y)
