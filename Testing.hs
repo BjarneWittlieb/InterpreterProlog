@@ -55,8 +55,8 @@ fromString s = case parse s of
     Right g -> g
     _       -> error "Parse error!"
 
-substFromString :: [String] -> Subst
-substFromString strList = Subst (fmap tupleFromString strList) where
+substFromStrings :: [String] -> Subst
+substFromStrings strList = Subst (fmap tupleFromString strList) where
     tupleFromString:: String -> (VarName, Term)
     tupleFromString str = let tuple = strSplit "->" str in
         case parse (strTrim (snd tuple)) of
@@ -145,7 +145,8 @@ prop_bfs_bothanonym = testIfEmpty bothEmpty bfs
 prop_idfs_bothanonym = testIfEmpty bothEmpty idfs
 
 multSubs = fromString "=(f(A,B),f(f(C),g(D)))."
--- prop_dfs_multiplesubs = testForSolution (Prog []) multSubs dfs [(Subst [("A", (Comb "f" [(Var "C")])), ("B")])]
+expectetMultSubs = [substFromStrings ["A -> f(C)", "B -> g(D)"]]
+prop_dfs_multiplesubs = testForSolution (Prog []) multSubs dfs expectetMultSubs
 
 
 testForSolution :: Prog -> Goal -> Strategy -> [Subst] -> Bool
