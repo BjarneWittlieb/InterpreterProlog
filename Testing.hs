@@ -126,6 +126,12 @@ prop_dfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]),
 prop_bfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") bfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
 prop_idfs_append1 = testForSolution listProgram (fromString "append(Xs,Ys,[2,1]), append(Ys,Xs,[1,2]).") idfs (Subst [("Xs", Comb "2" []),("Ys", Comb "1" [])])
 
+subst_append2 = "{X -> [], Y -> [1, 2]}",
+% "{X -> [1], Y -> [2]}", and "{X -> [1, 2], Y -> []}".
+prop_dfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." dfs subst_append2)
+prop_bfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." bfs subst_append2)
+prop_idfs_append2 = testForSolution listProgram (fromString "append(X,Y,[1,2])." idfs subst_append2)
+
 
 
 return []
