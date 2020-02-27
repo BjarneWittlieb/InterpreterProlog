@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 
@@ -6,7 +8,9 @@ import SLDResolution
 import Parser
 import Substitutions
 import Prettyprinting
+
 import System.IO
+
 
 -- Welcomes the User and loops
 main :: IO ()
@@ -34,6 +38,8 @@ main = do
     putStrLn "        Nc  ............................. .kMMMM\n\n"
     -- Start with empty programm
     loop (Prog []) dfs
+
+
 
 -- Now File stands for the currently loaded program
 
