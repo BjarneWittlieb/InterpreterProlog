@@ -1,4 +1,4 @@
-module SLDResolution(Strategy, SLDTree, dfs, bfs, idfs, solve, simplify, sld, renameSubst) where
+module SLDResolution(Strategy, SLDTree, dfs, bfs, idfs, solve, simplify, renameSubst) where
 -- NOT exporting the SLDTree constructor, cause it doesnt matter
 
 import Type
@@ -116,6 +116,7 @@ dfs (Node _ []) = []
 dfs (Node goal ((s, tree):ms)) = (fmap (\x -> restrictTo (allVars goal) (repComp x s)) (dfs tree)) ++ dfs (Node goal ms)
 
 -- breadth-first search
+-- goes through the sld tree one level at a time and looks for solutions, concats the substitutions of each level together
 bfs :: Strategy
 bfs tree = concat (runRepeatState (not.null) (\_ -> st) [] [([], tree)]) where
   st :: State [([([VarName], Subst)], SLDTree)] [Subst]

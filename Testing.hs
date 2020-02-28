@@ -81,7 +81,7 @@ normify :: [VarName] -> Subst -> Subst
 normify vs s = let s' = simplify vs (repeatSubst s) in order2 (renameSubst vs (order2 (applySub (order1 vs s') s'))) where 
   order1 :: [VarName] -> Subst -> Subst
   order1 v (Subst []) = empty
-  order1 v' (Subst ((v, Var w):xs)) | (elem w v') && v > w = Subst ((v, Var w):((w, Var v):(fromSubst (order1 v' (Subst xs)))))
+  order1 v' (Subst ((v, Var w):xs)) | (elem w v') && v > w = let sub = Subst [(v, Var w),(w, Var v)] in compose (order1 v' (applySub sub (Subst xs))) sub
   order1 v (Subst (x:xs)) = order1 v (Subst xs)
   order2 :: Subst -> Subst
   order2 (Subst []) = empty
